@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+    <!-- Configuración del documento: caracteres, tamaño de pantalla y recursos. -->
+    <head>
+        <!-- UTF-8 admite tildes; viewport adapta el ancho; CSP limita scripts y estilos a archivos locales. -->
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'"
+        />
+        <title>Farmacia Josué</title>
+        <!-- Comparte los estilos visuales del sistema. -->
+        <link rel="stylesheet" href="styles.css" />
+        <!-- Carga la lógica de esta pantalla después de leer el HTML. -->
+        <script src="renderer.js" defer></script>
+    </head>
+    <body>
+        <!-- Pantalla de acceso: visible mientras no hay una sesión recuperada. -->
+        <main id="login" class="login-layout">
+            <section class="login-card" aria-labelledby="login-titulo">
+                <div class="marca" aria-hidden="true">✚</div>
+                <p class="etiqueta">FARMACIA JOSUÉ</p>
+                <h1 id="login-titulo">Bienvenido</h1>
+                <p class="subtitulo">Iniciá sesión para acceder al sistema.</p>
+                <!-- Formulario de credenciales; renderer.js procesa su envío. -->
+                <form id="login-form">
+                    <!-- Nombre de usuario con autocompletado y validación de campo obligatorio. -->
+                    <label for="usuario">Usuario</label>
+                    <input
+                        id="usuario"
+                        name="usuario"
+                        autocomplete="username"
+                        placeholder="Ingresá tu usuario"
+                        required
+                        autofocus
+                    />
+                    <!-- Campo de contraseña; el navegador oculta visualmente los caracteres. -->
+                    <label for="contrasena">Contraseña</label>
+                    <input
+                        id="contrasena"
+                        name="contrasena"
+                        type="password"
+                        autocomplete="current-password"
+                        placeholder="Ingresá tu contraseña"
+                        required
+                    />
+                    <!-- Espacio para los errores de acceso, anunciado por los lectores de pantalla. -->
+                    <p id="error-login" class="error" role="alert" hidden></p>
+                    <button class="principal" type="submit">Iniciar sesión</button>
+                </form>
+            </section>
+            <p class="pie">Sistema de gestión · Proyecto inicial</p>
+        </main>
+
+        <!-- Panel oculto hasta que se verifica el inicio de sesión. -->
+        <div id="panel" hidden>
+            <!-- Cabecera con acceso al inicio, nombre del usuario y cierre de sesión. -->
+            <header class="cabecera">
+                <a href="#" id="inicio" class="nombre"
+                    ><span class="marca pequena" aria-hidden="true">✚</span> Farmacia
+                    Josué</a
+                >
+                <!-- JavaScript completa aquí el nombre y el rol de la cuenta conectada. -->
+                <div class="sesion">
+                    <span
+                        ><span id="sesion-nombre"></span
+                        ><small id="sesion-rol"></small></span
+                    ><button id="salir" type="button">Cerrar sesión</button>
+                </div>
+            </header>
+            <main class="contenido">
+                <!-- Bienvenida y accesos a los módulos disponibles. -->
+                <section id="bienvenida" aria-labelledby="panel-titulo">
+                    <p class="etiqueta">PANEL PRINCIPAL</p>
+                    <h1 id="panel-titulo" tabindex="-1">Bienvenido al sistema</h1>
+                    <p class="subtitulo">Farmacia Josué</p>
+                    <!-- Acceso a Usuarios; se muestra solo para administradores. -->
+                    <button id="abrir-usuarios" type="button" hidden>
+                        Usuarios · Administrar usuarios del sistema
+                    </button>
+                </section>
+            </main>
+        </div>
+    </body>
+</html>

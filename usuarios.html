@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+    <!-- Configuración del documento: caracteres, tamaño de pantalla y recursos. -->
+    <head>
+        <!-- UTF-8 admite tildes; viewport adapta el ancho; CSP limita scripts y estilos a archivos locales. -->
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'"
+        />
+        <title>Usuarios | Farmacia Josué</title>
+        <!-- Comparte los estilos visuales del sistema. -->
+        <link rel="stylesheet" href="styles.css" />
+        <!-- Carga la lógica de esta pantalla después de leer el HTML. -->
+        <script src="usuarios-ui.js" defer></script>
+    </head>
+    <body>
+        <!-- Contenido oculto hasta que usuarios-ui.js verifica la sesión y el rol. -->
+        <div id="pagina-usuarios" hidden>
+            <!-- Cabecera con acceso al inicio, nombre del usuario y cierre de sesión. -->
+            <header class="cabecera">
+                <a href="index.html" id="inicio" class="nombre"
+                    ><span class="marca pequena" aria-hidden="true">✚</span> Farmacia
+                    Josué</a
+                >
+                <!-- JavaScript completa aquí el nombre y el rol de la cuenta conectada. -->
+                <div class="sesion">
+                    <span
+                        ><span id="sesion-nombre"></span
+                        ><small id="sesion-rol"></small></span
+                    ><button id="salir" type="button">Cerrar sesión</button>
+                </div>
+            </header>
+            <main class="contenido">
+                <!-- Módulo de usuarios: navegación, formulario y tabla de registros. -->
+                <section id="usuarios-vista" aria-labelledby="usuarios-titulo">
+                    <button id="volver-inicio" type="button">← Volver al inicio</button>
+                    <h1 id="usuarios-titulo" tabindex="-1">Usuarios</h1>
+                    <p class="subtitulo">
+                        Registrá usuarios y actualizá sus datos, rol o estado.
+                    </p>
+                    <!-- Muestra el progreso, los errores y la confirmación de guardado. -->
+                    <p id="usuarios-mensaje" role="status" aria-live="polite"></p>
+                    <!-- El mismo formulario permite crear cuentas y editar las seleccionadas. -->
+                    <form id="usuarios-form" class="caja">
+                        <h2 id="usuario-form-titulo">Nuevo usuario</h2>
+                        <!-- Datos personales, contacto y credenciales. name identifica cada campo al guardar. -->
+                        <div class="campos-usuario">
+                            <label
+                                >Nombre *<input name="nombre" maxlength="100" required
+                            /></label>
+                            <label
+                                >Apellido *<input
+                                    name="apellido"
+                                    maxlength="100"
+                                    required
+                            /></label>
+                            <label
+                                >Identidad<input
+                                    name="identidad"
+                                    maxlength="20"
+                                    placeholder="0706-2000-04500"
+                            /></label>
+                            <label
+                                >Teléfono<input
+                                    name="telefono"
+                                    type="tel"
+                                    maxlength="20"
+                                    placeholder="9999-9999"
+                            /></label>
+                            <label
+                                >Correo<input name="correo" type="email" maxlength="150"
+                            /></label>
+                            <label
+                                >Dirección<input name="direccion" maxlength="255"
+                            /></label>
+                            <label
+                                >Nombre de usuario *<input
+                                    name="nombre_usuario"
+                                    maxlength="50"
+                                    autocomplete="off"
+                                    required
+                            /></label>
+                            <label
+                                >Contraseña<input
+                                    name="contrasena"
+                                    type="password"
+                                    minlength="8"
+                                    maxlength="1024"
+                                    autocomplete="new-password"
+                                    required
+                                    aria-describedby="clave-ayuda"
+                            /></label>
+                            <label
+                                >Rol<select name="rol">
+                                    <option>Administrador</option>
+                                    <option selected>Cajero</option>
+                                </select></label
+                            >
+                            <label
+                                >Estado<select name="estado">
+                                    <option>Activo</option>
+                                    <option>Inactivo</option>
+                                </select></label
+                            >
+                        </div>
+                        <!-- Explica cómo conservar la contraseña al editar un registro. -->
+                        <p id="clave-ayuda" class="pie">
+                            Mínimo 8 caracteres. Al editar, dejala vacía para conservar la
+                            contraseña.
+                        </p>
+                        <!-- Guardar envía los datos; cancelar limpia el formulario sin guardar. -->
+                        <div class="acciones">
+                            <button id="guardar-usuario" type="submit">
+                                Guardar usuario</button
+                            ><button id="cancelar-usuario" type="button">
+                                Limpiar / cancelar
+                            </button>
+                        </div>
+                    </form>
+                    <!-- Buscador y listado; el filtro se aplica sobre los usuarios cargados. -->
+                    <div class="caja">
+                        <label for="buscar-usuario"
+                            >Buscar por nombre, usuario o identidad</label
+                        >
+                        <input
+                            id="buscar-usuario"
+                            type="search"
+                            placeholder="Buscar usuario..."
+                        />
+                        <button id="recargar-usuarios" type="button">
+                            Actualizar lista
+                        </button>
+                        <!-- Contenedor que permite desplazar horizontalmente la tabla en pantallas angostas. -->
+                        <div class="tabla-contenedor">
+                            <table>
+                                <caption>
+                                    Usuarios registrados
+                                </caption>
+                                <!-- Encabezados de las columnas visibles. Las contraseñas no se muestran. -->
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Usuario</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <!-- usuarios-ui.js crea aquí las filas y sus botones Editar. -->
+                                <tbody id="usuarios-filas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+        <!-- Mensaje inicial mientras se verifica el acceso; también muestra fallos de conexión. -->
+        <p id="sesion-mensaje" class="contenido" role="status">Verificando sesión...</p>
+    </body>
+</html>

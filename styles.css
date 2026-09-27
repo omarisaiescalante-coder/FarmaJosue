@@ -1,0 +1,286 @@
+/* Fuente, colores y fondo generales de todas las pantallas. */
+:root {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #243d36;
+    background: #f3f6f5;
+    font-synthesis: none;
+}
+/* Incluye bordes y relleno dentro del ancho de cada elemento. */
+* {
+    box-sizing: border-box;
+}
+/* Elimina el margen que agrega el navegador. */
+body {
+    margin: 0;
+}
+/* Garantiza que los elementos marcados como hidden no se vean. */
+[hidden] {
+    display: none !important;
+}
+/* Los controles heredan la fuente; los botones comparten bordes y colores. */
+button,
+input {
+    font: inherit;
+}
+button {
+    cursor: pointer;
+    border: 1px solid #cbd9d3;
+    border-radius: 7px;
+    background: white;
+    padding: 10px 16px;
+    color: #245744;
+}
+/* Resalta los botones al pasar el cursor. */
+button:hover {
+    background: #edf5f0;
+}
+/* Marca el control enfocado al navegar con el teclado. */
+:focus-visible {
+    outline: 3px solid #74bda0;
+    outline-offset: 3px;
+}
+/* Jerarquía visual de títulos, subtítulos y etiquetas. */
+h1 {
+    margin: 8px 0 12px;
+    font-size: 29px;
+    line-height: 1.2;
+}
+.subtitulo {
+    color: #61746c;
+    line-height: 1.6;
+    margin: 0 0 28px;
+}
+.etiqueta {
+    color: #257452;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    margin-top: 22px;
+}
+/* Centra el login y le da altura suficiente para ocupar la ventana. */
+.login-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 20px;
+}
+/* Tarjeta blanca que contiene los campos de acceso. */
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 36px;
+    border: 1px solid #dfe7e2;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 8px 30px #183e2910;
+}
+/* Aspecto de la cruz que identifica la farmacia. */
+.marca {
+    width: 48px;
+    height: 48px;
+    background: #e5f3eb;
+    color: #267b53;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+/* Presentación de etiquetas y campos de entrada. */
+label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 18px 0 8px;
+}
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd9d3;
+    border-radius: 7px;
+    background: #fff;
+    color: #243d36;
+}
+/* Botón principal de inicio de sesión. */
+.principal {
+    width: 100%;
+    background: #24764f;
+    color: white;
+    border-color: #24764f;
+    margin-top: 24px;
+    padding: 12px;
+    font-weight: 600;
+}
+.principal:hover {
+    background: #1b603f;
+}
+/* Estilo disponible para avisos de demostración; actualmente no se usa. */
+.demo {
+    font-size: 13px;
+    line-height: 1.8;
+    color: #64746c;
+    text-align: center;
+    background: #f4f7f5;
+    padding: 12px;
+    border-radius: 6px;
+    margin: 24px 0 0;
+}
+/* Textos secundarios y explicaciones al pie de los formularios. */
+.pie {
+    color: #61746c;
+    font-size: 13px;
+}
+.pie {
+    margin-top: 24px;
+}
+/* Color de los mensajes de error del login. */
+.error {
+    color: #a12d2d;
+    font-size: 14px;
+}
+/* Distribuye el nombre de la farmacia y los datos de la sesión. */
+.cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px 5%;
+    background: white;
+    border-bottom: 1px solid #dfe7e2;
+}
+/* Enlace de la marca que permite volver al inicio. */
+.nombre {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #245744;
+    text-decoration: none;
+    font-size: 19px;
+    font-weight: 700;
+}
+/* Versión reducida de la cruz para la cabecera. */
+.pequena {
+    width: 36px;
+    height: 36px;
+    font-size: 25px;
+}
+/* Alinea nombre, rol y botón de salida. */
+.sesion {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    font-size: 14px;
+}
+.sesion small {
+    display: block;
+    color: #61746c;
+    margin-top: 3px;
+}
+/* Limita el ancho y centra el contenido del panel y los módulos. */
+.contenido {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 38px 28px;
+}
+/* Tarjetas del formulario y del listado de usuarios. */
+.caja {
+    background: white;
+    padding: 24px;
+    border: 1px solid #dfe7e2;
+    border-radius: 10px;
+    margin: 22px 0;
+}
+/* Organiza los campos en dos columnas. */
+.campos-usuario {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 22px;
+}
+/* Separa los controles de sus etiquetas. */
+.campos-usuario input,
+/* Aspecto de las listas desplegables de rol y estado. */
+select {
+    margin-top: 8px;
+}
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd9d3;
+    border-radius: 7px;
+    background: white;
+    color: #243d36;
+    font: inherit;
+}
+/* Distribuye los botones del formulario y permite que cambien de fila. */
+.acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+}
+/* Destaca la acción de guardar. */
+#guardar-usuario {
+    background: #24764f;
+    color: white;
+}
+/* Indica visualmente que un botón está temporalmente bloqueado. */
+button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+/* Habilita desplazamiento horizontal cuando la tabla no cabe. */
+.tabla-contenedor {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+/* Formato compartido de tabla, título, encabezados y celdas. */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+caption {
+    text-align: left;
+    font-weight: 600;
+    padding: 12px 0;
+}
+th,
+td {
+    padding: 12px;
+    border-bottom: 1px solid #dfe7e2;
+}
+th {
+    background: #edf5f0;
+}
+/* Espacio entre el buscador y el botón de actualizar. */
+#recargar-usuarios {
+    margin-top: 12px;
+}
+/* Separa el título del botón de regreso. */
+#usuarios-titulo {
+    margin-top: 24px;
+}
+/* En ventanas pequeñas, usa una columna y adapta cabecera, tarjetas y espacios. */
+@media (max-width: 560px) {
+    .campos-usuario {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 560px) {
+    .cabecera {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .sesion {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .login-card {
+        padding: 26px;
+    }
+    .contenido {
+        padding: 25px 20px;
+    }
+}

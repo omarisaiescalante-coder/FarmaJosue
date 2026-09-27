@@ -1,0 +1,19 @@
+{
+    "name": "farma-josue",
+    "devDependencies": {
+        "electron": "^44.4.5"
+    },
+    "version": "1.0.0",
+    "description": "Inicio sencillo del proyecto con Electron, HTML, CSS y JavaScript.",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "mysql2": "^3.24.4"
+    }
+}
