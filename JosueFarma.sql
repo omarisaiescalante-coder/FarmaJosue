@@ -1,4 +1,4 @@
--- Base completa: 9 tablas, relaciones, 2 usuarios y 1 ejemplo por tabla restante.
+-- Esquema actual: usuarios, medicamentos, presentaciones, distribuidores, compras y lotes.
 -- Ejecutar todo el archivo después de eliminar la base anterior.
 -- Si aún no la eliminaste, esta línea permite hacerlo al quitar los dos guiones.
 -- ATENCIÓN: DROP DATABASE elimina todos los datos actuales.
@@ -32,25 +32,11 @@ CREATE TABLE medicamentos (
   id_medicamento INT AUTO_INCREMENT PRIMARY KEY,
   codigo VARCHAR(20) UNIQUE NOT NULL,
   nombre VARCHAR(150) UNIQUE NOT NULL,
-  descripcion VARCHAR(255),
   categoria VARCHAR(100),
-  presentacion VARCHAR(150),
-  precio_compra DECIMAL(10, 2) NOT NULL,
-  precio_venta DECIMAL(10, 2) NOT NULL,
-  stock_total INT DEFAULT 0,
-  stock_minimo INT DEFAULT 5,
   restriccion ENUM('Sin Receta Medica', 'Con Receta Medica') NOT NULL,
   laboratorio VARCHAR(150),
-  forma_venta ENUM(
-    'Caja',
-    'Unidad',
-    'Frasco',
-    'Blister',
-    'Sobre',
-    'Ampolla',
-    'Suero'
-  ) NOT NULL,
-  estado ENUM('Disponible', 'Agotado', 'Inactivo') DEFAULT 'Disponible',
+  stock_total INT DEFAULT 0,
+  estado ENUM('Disponible', 'Agotado', 'Inactivo') DEFAULT 'Agotado',
   fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -62,7 +48,6 @@ CREATE TABLE Medicamento_presentaciones (
   nombre_presentacion VARCHAR(150) NOT NULL,
   precio_venta DECIMAL(10, 2) NOT NULL,
   unidades_stock INT NOT NULL DEFAULT 1,
-  estado ENUM('Activa', 'Inactiva') DEFAULT 'Activa',
   UNIQUE (id_medicamento, nombre_presentacion),
   FOREIGN KEY (id_medicamento) REFERENCES medicamentos (id_medicamento)
 );
@@ -71,13 +56,22 @@ CREATE TABLE Medicamento_presentaciones (
 -- Lotes recibidos: vencimiento, cantidades y costos de inventario.
 CREATE TABLE Lote (
   id_lote INT AUTO_INCREMENT PRIMARY KEY,
+  laboratorio VARCHAR(150),
   id_medicamento INT NOT NULL,
   numero_lote VARCHAR(50) UNIQUE NOT NULL,
   cantidad_inicial INT NOT NULL,
   cantidad_disponible INT NOT NULL,
   fecha_fabricacion DATE,
   fecha_vencimiento DATE NOT NULL,
-  precio_compra DECIMAL(10, 2),
+  presentacion_ingreso VARCHAR(20) NOT NULL DEFAULT 'Unidad',
+  contenido_caja VARCHAR(20),
+  paquetes_por_caja INT,
+  unidades_por_blister INT,
+  cantidad_empaques INT,
+  precio_empaque DECIMAL(10, 2),
+  precio_venta DECIMAL(10, 2),
+  precio_venta_contenido DECIMAL(10, 2),
+  precio_venta_unidad DECIMAL(10, 2),
   costo_total DECIMAL(12, 2),
   estado ENUM('Disponible', 'Agotado', 'Vencido', 'Retirado') DEFAULT 'Disponible',
   fecha_ingreso DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -90,16 +84,15 @@ CREATE TABLE Distribuidores (
   id_distribuidor INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(150) UNIQUE NOT NULL,
   telefono VARCHAR(20),
-  correo VARCHAR(150),
-  direccion VARCHAR(255)
+  correo VARCHAR(150)
 );
 
 -- Encabezado de las compras realizadas a distribuidores.
 CREATE TABLE Compras (
   id_compra INT AUTO_INCREMENT PRIMARY KEY,
+  laboratorio VARCHAR(150),
   numero_factura VARCHAR(50) UNIQUE NOT NULL,
   id_usuario INT NOT NULL,
-  id_medicamento INT NULL,
   id_distribuidor INT NOT NULL,
   fecha_compra DATE NOT NULL,
   total DECIMAL(10, 2) NOT NULL,
@@ -107,7 +100,6 @@ CREATE TABLE Compras (
   estado ENUM('A Credito', 'Cancelado') NOT NULL DEFAULT 'A Credito',
   fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario),
-  FOREIGN KEY (id_medicamento) REFERENCES medicamentos (id_medicamento),
   FOREIGN KEY (id_distribuidor) REFERENCES distribuidores (id_distribuidor)
 );
 
@@ -116,52 +108,6 @@ CREATE TABLE Compras (
 ALTER TABLE Lote
 ADD COLUMN id_compra INT NULL,
 ADD FOREIGN KEY (id_compra) REFERENCES compras (id_compra);
-
--- -------------------------------------------------------------------
--- Encabezado de cada venta, sus montos y el cliente atendido.
-CREATE TABLE Ventas (
-  id_venta INT AUTO_INCREMENT PRIMARY KEY,
-  numero_factura VARCHAR(30) UNIQUE NOT NULL,
-  id_usuario INT NOT NULL,
-  fecha_venta DATETIME DEFAULT CURRENT_TIMESTAMP,
-  subtotal DECIMAL(10, 2) NOT NULL,
-  descuento DECIMAL(10, 2) DEFAULT 0.00,
-  impuesto DECIMAL(10, 2) DEFAULT 0.00,
-  total DECIMAL(10, 2) NOT NULL,
-  metodo_pago ENUM('Efectivo', 'Tarjeta', 'Transferencia', 'Mixto') NOT NULL,
-  monto_recibido DECIMAL(10, 2),
-  cambio DECIMAL(10, 2) DEFAULT 0.00,
-  estado ENUM('Completada', 'Anulada') DEFAULT 'Completada',
-  FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario)
-);
-
--- --------------------------------------------------------------------
--- Productos y cantidades que componen cada venta.
-CREATE TABLE Detalles_venta (
-  id_detalle_venta INT AUTO_INCREMENT PRIMARY KEY,
-  id_venta INT NOT NULL,
-  id_medicamento INT NOT NULL,
-  id_presentacion INT,
-  presentacion VARCHAR(150) NOT NULL,
-  cantidad INT NOT NULL,
-  precio_unitario DECIMAL(10, 2) NOT NULL,
-  descuento DECIMAL(10, 2) DEFAULT 0.00,
-  subtotal DECIMAL(10, 2) NOT NULL,
-  FOREIGN KEY (id_venta) REFERENCES ventas (id_venta),
-  FOREIGN KEY (id_medicamento) REFERENCES medicamentos (id_medicamento),
-  FOREIGN KEY (id_presentacion) REFERENCES medicamento_presentaciones (id_presentacion)
-);
-
--- Lotes utilizados por cada detalle de venta. Permite salida FEFO y devoluciones.
-CREATE TABLE Detalle_Venta_Lotes (
-  id_asignacion INT AUTO_INCREMENT PRIMARY KEY,
-  id_detalle_venta INT NOT NULL,
-  id_lote INT NOT NULL,
-  cantidad_unidades INT NOT NULL,
-  UNIQUE (id_detalle_venta, id_lote),
-  FOREIGN KEY (id_detalle_venta) REFERENCES detalles_venta (id_detalle_venta) ON DELETE CASCADE,
-  FOREIGN KEY (id_lote) REFERENCES lote (id_lote)
-);
 
 USE JosueFarma;
 
@@ -209,196 +155,28 @@ VALUES
     'Activo'
   );
 
--- Medicamento con 98 unidades restantes: compra de 100 y venta de 2.
-INSERT INTO
-  medicamentos (
-    id_medicamento,
-    codigo,
-    nombre,
-    descripcion,
-    categoria,
-    presentacion,
-    precio_compra,
-    precio_venta,
-    stock_total,
-    stock_minimo,
-    restriccion,
-    laboratorio,
-    forma_venta,
-    estado
-  )
-VALUES
-  (
-    1,
-    'MED-001',
-    'Paracetamol 500 mg',
-    'Medicamento de ejemplo para el inventario',
-    'Analgésicos',
-    'Tableta individual',
-    2.00,
-    3.00,
-    98,
-    10,
-    'Sin Receta Medica',
-    'Laboratorio de ejemplo',
-    'Unidad',
-    'Disponible'
-  );
+-- Ejemplo consistente con el flujo actual: compra de una caja de 100 pastillas.
+INSERT INTO medicamentos
+  (id_medicamento, codigo, nombre, categoria, restriccion, laboratorio, stock_total, estado)
+VALUES (1, 'MED-001', 'Paracetamol 500 mg', 'Analgésicos', 'Sin Receta Medica',
+  'Laboratorio de ejemplo', 100, 'Disponible');
 
--- Presentación del medicamento 1: una tableta equivale a una unidad de stock.
-INSERT INTO
-  Medicamento_presentaciones (
-    id_presentacion,
-    id_medicamento,
-    nombre_presentacion,
-    precio_venta,
-    unidades_stock,
-    estado
-  )
-VALUES
-  (1, 1, 'Tableta individual', 3.00, 1, 'Activa');
+-- Los precios por caja, blíster y pastilla se registran desde el ingreso del lote.
+INSERT INTO Medicamento_presentaciones
+  (id_medicamento, nombre_presentacion, precio_venta, unidades_stock)
+VALUES (1, 'Caja', 250.00, 100), (1, 'Blister', 28.00, 10), (1, 'Unidad', 3.00, 1);
 
--- Proveedor de ejemplo que se relaciona con la compra 1.
-INSERT INTO
-  Distribuidores (
-    id_distribuidor,
-    nombre,
-    telefono,
-    correo,
-    direccion
-  )
-VALUES
-  (
-    1,
-    'Distribuidora de ejemplo',
-    '9999-0001',
-    'ventas@example.com',
-    'Danlí, El Paraíso'
-  );
+INSERT INTO Distribuidores (id_distribuidor, nombre, telefono, correo)
+VALUES (1, 'Laboratorio de ejemplo', '9999-0001', 'compras@example.com');
 
--- Compra pagada de 100 unidades a 2.00: total 200.00.
-INSERT INTO
-  Compras (
-    id_compra,
-    numero_factura,
-    id_usuario,
-    id_medicamento,
-    id_distribuidor,
-    fecha_compra,
-    total,
-    metodo_pago,
-    estado
-  )
-VALUES
-  (
-    1,
-    'COMP-001',
-    1,
-    1,
-    1,
-    '2026-09-25',
-    200.00,
-    'Efectivo',
-    'Cancelado'
-  );
+INSERT INTO Compras
+  (id_compra, laboratorio, numero_factura, id_usuario, id_distribuidor, fecha_compra, total, metodo_pago, estado)
+VALUES (1, 'Laboratorio de ejemplo', 'COM-0001', 1, 1, '2026-09-25', 200.00, 'Efectivo', 'Cancelado');
 
--- Lote de la compra 1 con sus fechas y las 98 unidades restantes.
-INSERT INTO
-  Lote (
-    id_lote,
-    id_medicamento,
-    numero_lote,
-    cantidad_inicial,
-    cantidad_disponible,
-    fecha_fabricacion,
-    fecha_vencimiento,
-    precio_compra,
-    costo_total,
-    estado,
-    id_compra
-  )
-VALUES
-  (
-    1,
-    1,
-    'LOT-001',
-    100,
-    98,
-    '2026-01-01',
-    '2028-01-01',
-    2.00,
-    200.00,
-    'Disponible',
-    1
-  );
-
--- Venta por 6.00: se reciben 10.00 y se devuelven 4.00 de cambio.
-INSERT INTO
-  Ventas (
-    id_venta,
-    numero_factura,
-    id_usuario,
-    fecha_venta,
-    subtotal,
-    descuento,
-    impuesto,
-    total,
-    metodo_pago,
-    monto_recibido,
-    cambio,
-    estado
-  )
-VALUES
-  (
-    1,
-    'VENT-001',
-    1,
-    '2026-09-26 10:00:00',
-    6.00,
-    0.00,
-    0.00,
-    6.00,
-    'Efectivo',
-    10.00,
-    4.00,
-    'Completada'
-  );
-
--- Producto y presentación de la venta 1: dos unidades a 3.00.
-INSERT INTO
-  Detalles_venta (
-    id_detalle_venta,
-    id_venta,
-    id_medicamento,
-    id_presentacion,
-    presentacion,
-    cantidad,
-    precio_unitario,
-    descuento,
-    subtotal
-  )
-VALUES
-  (
-    1,
-    1,
-    1,
-    1,
-    'Tableta individual',
-    2,
-    3.00,
-    0.00,
-    6.00
-  );
-
--- Relaciona el detalle 1 con el lote 1 del que salieron dos unidades.
-INSERT INTO
-  Detalle_Venta_Lotes (
-    id_asignacion,
-    id_detalle_venta,
-    id_lote,
-    cantidad_unidades
-  )
-VALUES
-  (1, 1, 1, 2);
-
-;
+INSERT INTO Lote
+  (id_lote, laboratorio, id_medicamento, numero_lote, cantidad_inicial, cantidad_disponible,
+   fecha_fabricacion, fecha_vencimiento, presentacion_ingreso, contenido_caja,
+   paquetes_por_caja, unidades_por_blister, cantidad_empaques, precio_empaque,
+   precio_venta, precio_venta_contenido, precio_venta_unidad, costo_total, estado, id_compra)
+VALUES (1, 'Laboratorio de ejemplo', 1, 'LOT-000001', 100, 100, '2026-01-01', '2028-01-01',
+  'Caja', 'Blister', 10, 10, 1, 200.00, 250.00, 28.00, 3.00, 200.00, 'Disponible', 1);
