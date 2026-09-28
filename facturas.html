@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+    <!-- Configuración del documento: caracteres, tamaño de pantalla y recursos. -->
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'"
+        />
+        <title>Facturas | Farmacia Josué</title>
+        <!-- Comparte los estilos visuales del sistema. -->
+        <link rel="stylesheet" href="styles.css" />
+        <!-- Aquí cargarás luego tu lógica de facturas -->
+        <script src="facturas-ui.js" defer></script>
+    </head>
+    <body>
+        <!-- Contenido oculto hasta que verifique sesión (siguiendo el estándar de ellos) -->
+        <div id="pagina-facturas" hidden>
+            <!-- Cabecera idéntica a las demás vistas -->
+            <header class="cabecera">
+                <a href="index.html" id="inicio" class="nombre">
+                    <span class="marca pequena" aria-hidden="true">✚</span> Farmacia Josué
+                </a>
+                <div class="sesion">
+                    <span><span id="sesion-nombre"></span><small id="sesion-rol"></small></span>
+                    <button id="salir" type="button">Cerrar sesión</button>
+                </div>
+            </header>
+            
+            <main class="contenido">
+                <section id="facturas-vista" aria-labelledby="facturas-titulo">
+                    <button id="volver-inicio" type="button">← Volver al inicio</button>
+                    <h1 id="facturas-titulo" tabindex="-1">Módulo de Facturas</h1>
+                    <p class="subtitulo">
+                        Registrá y gestioná las facturas de venta de la farmacia.
+                    </p>
+                    
+                    <!-- Mensajes de estado -->
+                    <p id="facturas-mensaje" role="status" aria-live="polite"></p>
+
+                    <!-- Formulario para crear factura -->
+                    <form id="facturas-form" class="caja">
+                        <h2>Nueva Factura</h2>
+                        <div class="campos-usuario">
+                            <label>Cliente *<input name="cliente" maxlength="100" required placeholder="Nombre del cliente" /></label>
+                            <label>Producto *<input name="producto" maxlength="100" required placeholder="Medicamento o artículo" /></label>
+                            <label>Cantidad *<input name="cantidad" type="number" min="1" required value="1" /></label>
+                            <label>Precio Unitario (L.) *<input name="precio" type="number" step="0.01" min="0" required placeholder="0.00" /></label>
+                        </div>
+                        <div class="acciones">
+                            <button id="guardar-factura" type="submit">Registrar Factura</button>
+                            <button id="cancelar-factura" type="button">Limpiar / cancelar</button>
+                        </div>
+                    </form>
+
+                    <!-- Listado de facturas -->
+                    <div class="caja">
+                        <label for="buscar-factura">Buscar factura por cliente o producto</label>
+                        <input id="buscar-factura" type="search" placeholder="Buscar factura..." />
+                        <button id="recargar-facturas" type="button">Actualizar lista</button>
+                        
+                        <div class="tabla-contenedor">
+                            <table>
+                                <caption>Facturas registradas</caption>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Cliente</th>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="facturas-filas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+        <!-- Mensaje inicial de sesión -->
+        <p id="sesion-mensaje" class="contenido" role="status">Verificando sesión...</p>
+    </body>
+</html>
