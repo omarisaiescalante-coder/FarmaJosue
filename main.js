@@ -4,6 +4,7 @@ const path = require('node:path');
 const db = require('./database');
 const { autenticar } = require('./auth');
 const usuarios = require('./usuarios');
+const compras = require('./compras-servicio');
 // Conserva el usuario conectado en memoria mientras la app permanece abierta.
 let usuarioActivo = null;
 
@@ -59,6 +60,16 @@ for (const operacion of ['listar', 'guardar']) {
 }
 
 // Configura el tamaño de la ventana y conecta puente.js con las pantallas.
+for (const operacion of ['cargar', 'guardar', 'lotes', 'registrarMedicamento']) {
+    ipcMain.handle(`compras:${operacion}`, async (_evento, datos) => {
+        try {
+            return { datos: await compras[operacion](db, usuarioActivo, datos) };
+        } catch (error) {
+            return { error: error.code ? 'No se pudo consultar MySQL. Revisá la conexión y las tablas de compras y lotes.' : error.message };
+        }
+    });
+}
+
 function crearVentana() {
     const ventana = new BrowserWindow({
         width: 1100,

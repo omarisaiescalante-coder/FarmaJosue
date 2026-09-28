@@ -14,4 +14,8 @@ contextBridge.exposeInMainWorld('farmacia', {
     listarUsuarios: () => ipcRenderer.invoke('usuarios:listar'),
     // Envía los datos del formulario para crear o actualizar un usuario.
     guardarUsuario: (datos) => ipcRenderer.invoke('usuarios:guardar', datos),
+    cargarCompras: () => ipcRenderer.invoke('compras:cargar'),
+    guardarCompra: (datos) => ipcRenderer.invoke('compras:guardar', datos),
+    listarLotesCompra: (id) => ipcRenderer.invoke('compras:lotes', id),
+    registrarMedicamento: (datos) => ipcRenderer.invoke('compras:registrarMedicamento', datos),
 });

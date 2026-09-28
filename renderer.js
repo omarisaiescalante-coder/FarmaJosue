@@ -80,6 +80,9 @@ document.getElementById('salir').addEventListener('click', async () => {
 document.getElementById('abrir-usuarios').addEventListener('click', () => {
     window.location.href = 'usuarios.html';
 });
+document.getElementById('abrir-compras').addEventListener('click', () => {
+    window.location.href = 'compras.html';
+});
 // Restaura el panel al volver de Usuarios sin pedir otra vez la contraseña.
 async function recuperarSesion() {
     if (!window.farmacia) return;
