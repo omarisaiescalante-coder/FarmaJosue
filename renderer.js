@@ -80,11 +80,9 @@ document.getElementById('salir').addEventListener('click', async () => {
 document.getElementById('abrir-usuarios').addEventListener('click', () => {
     window.location.href = 'usuarios.html';
 });
-<<<<<<< HEAD
 document.getElementById('abrir-compras').addEventListener('click', () => {
     window.location.href = 'compras.html';
 });
-=======
 
 // Navega a la página independiente del módulo de facturas.
 const botonFacturas = document.getElementById('abrir-facturas');
@@ -94,7 +92,6 @@ if (botonFacturas) {
     });
 }
 
->>>>>>> c48a4d19fca8ea4d97080bf9f53f464823d838a8
 // Restaura el panel al volver de Usuarios sin pedir otra vez la contraseña.
 async function recuperarSesion() {
     if (!window.farmacia) return;
