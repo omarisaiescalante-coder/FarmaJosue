@@ -18,4 +18,24 @@ contextBridge.exposeInMainWorld('farmacia', {
     guardarCompra: (datos) => ipcRenderer.invoke('compras:guardar', datos),
     listarLotesCompra: (id) => ipcRenderer.invoke('compras:lotes', id),
     registrarMedicamento: (datos) => ipcRenderer.invoke('compras:registrarMedicamento', datos),
+
 });
+
+listarMedicamentos: () =>
+ipcRenderer.invoke(
+'medicamentos:listar'
+),
+
+
+verLotesMedicamento:(id)=>
+ipcRenderer.invoke(
+'medicamentos:lotes',
+id
+),
+
+
+actualizarMedicamento:(datos)=>
+ipcRenderer.invoke(
+'medicamentos:actualizar',
+datos
+),

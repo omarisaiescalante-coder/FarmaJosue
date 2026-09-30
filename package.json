@@ -1,7 +1,7 @@
 {
     "name": "farma-josue",
     "devDependencies": {
-        "electron": "^44.4.5"
+        "electron": "^44.5.0"
     },
     "version": "1.0.0",
     "description": "Inicio sencillo del proyecto con Electron, HTML, CSS y JavaScript.",
@@ -14,6 +14,14 @@
     "license": "ISC",
     "type": "commonjs",
     "dependencies": {
-        "mysql2": "^3.24.4"
-    }
+        "mysql2": "^3.24.5"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/omarisaiescalante-coder/FarmaJosue.git"
+    },
+    "bugs": {
+        "url": "https://github.com/omarisaiescalante-coder/FarmaJosue/issues"
+    },
+    "homepage": "https://github.com/omarisaiescalante-coder/FarmaJosue#readme"
 }

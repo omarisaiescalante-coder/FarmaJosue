@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Medicamentos | Farmacia Josue</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="medicamentos.js" defer></script>
+</head>
+
+<body>
+
+<header class="cabecera">
+
+    <a href="index.html" class="nombre">
+         Farmacia Josue
+    </a>
+
+    <button id="salir">
+        Cerrar sesion
+    </button>
+
+</header>
+
+
+<main class="contenido">
+
+
+<h1>Modulo de Medicamentos</h1>
+
+<p>
+Visualizacion del catalogo de medicamentos registrados.
+</p>
+
+
+
+<section class="caja">
+
+
+<h2>Medicamentos disponibles</h2>
+
+
+<table>
+
+<thead>
+
+<tr>
+<th>Nombre</th>
+<th>Categoria</th>
+<th>Precio</th>
+<th>Stock</th>
+<th>Acciones</th>
+
+</tr>
+
+</thead>
+
+
+<tbody id="tablaMedicamentos">
+
+</tbody>
+
+
+</table>
+
+
+</section>
+
+
+
+<!-- FORMULARIO OCULTO -->
+
+<section id="editarMedicamento" class="caja" hidden>
+
+
+<h2>Editar medicamento</h2>
+
+
+<form id="formEditar">
+
+
+<input type="hidden" id="id_medicamento">
+
+
+<label>
+Nombre
+
+<input id="nombre">
+</label>
+
+
+<label>
+Categoria
+
+<input id="categoria">
+</label>
+
+
+
+<label>
+Restriccion
+
+<select id="restriccion">
+
+<option>
+Sin Receta Medica
+</option>
+
+<option>
+Con Receta Medica
+</option>
+
+</select>
+
+</label>
+
+
+<button type="submit">
+Guardar cambios
+</button>
+
+
+<button type="button" id="cancelar">
+Cancelar
+</button>
+
+
+
+</form>
+
+
+</section>
+
+
+
+<section id="detalleLotes" class="caja" hidden>
+
+<h2>Lotes del medicamento</h2>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Lote</th>
+<th>Vencimiento</th>
+<th>Cantidad</th>
+<th>Precio</th>
+
+</tr>
+
+</thead>
+
+
+<tbody id="tablaLotes">
+
+</tbody>
+
+
+</table>
+
+</section>
+
+
+
+</main>
+
+
+</body>
+
+</html>
