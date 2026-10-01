@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!-- Vista para registrar ventas y consultar su registro. -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ventas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-success px-4 py-3 shadow">
+        <strong class="navbar-brand">Farmacia Josue</strong>
+        <span id="sessionUser" class="text-white"></span>
+        <button id="logoutButton" class="btn btn-outline-light" type="button">Cerrar sesión</button>
+    </nav>
+
+    <main class="container-fluid p-4">
+        <button id="backButton" class="btn btn-outline-success mb-3" type="button">← Volver al menú</button>
+        <h1>Ventas</h1>
+        <p class="text-secondary">Registro de ventas de medicamentos.</p>
+        <div id="message" class="alert d-none" role="alert"></div>
+
+        <section class="card border-0 rounded-4 shadow-sm p-4 mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <!-- Sin "required" ni asterisco: solo se exige si hay receta médica -->
+                    <label for="dni" class="form-label">
+                        DNI del cliente <span id="dniAviso" class="text-danger" hidden>(obligatorio por receta médica)</span>
+                    </label>
+                    <input id="dni" class="form-control" maxlength="15" placeholder="0000-0000-00000">
+                </div>
+                <div class="col-md-4">
+                    <label for="metodoPago" class="form-label">Método de pago</label>
+                    <select id="metodoPago" class="form-select">
+                        <option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option>
+                    </select>
+                </div>
+            </div>
+
+            <hr>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="medicamento" class="form-label">Medicamento</label>
+                    <select id="medicamento" class="form-select"></select>
+                </div>
+                <div class="col-md-3">
+                    <label for="presentacion" class="form-label">Presentación</label>
+                    <select id="presentacion" class="form-select"></select>
+                </div>
+                <div class="col-md-2">
+                    <label for="cantidad" class="form-label">Cantidad</label>
+                    <input id="cantidad" type="number" min="1" value="1" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <button id="agregarButton" class="btn btn-outline-success" type="button">Agregar a la venta</button>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-3">
+                <table class="table align-middle">
+                    <thead><tr><th>Medicamento</th><th>Presentación</th><th>Receta</th><th>Cant.</th><th>Precio</th><th>Subtotal</th><th></th></tr></thead>
+                    <tbody id="carrito"></tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <strong id="totalVenta">Total: L. 0.00</strong>
+                <button id="guardarButton" class="btn btn-success" type="button">Guardar venta</button>
+            </div>
+        </section>
+
+        <section class="card border-0 rounded-4 shadow-sm p-3">
+            <button class="btn btn-link text-start h5 text-decoration-none" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#registroVentas">
+                Registro de ventas ▾
+            </button>
+            <div id="registroVentas" class="collapse show table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID Cliente</th><th>DNI del cliente</th><th>Fecha</th>
+                            <th>Total</th><th>Método de pago</th><th>Facturas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaVentas"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./ventas-pantalla.js"></script>
+</body>
+</html>

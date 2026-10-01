@@ -83,7 +83,12 @@ document.getElementById('abrir-usuarios').addEventListener('click', () => {
 document.getElementById('abrir-compras').addEventListener('click', () => {
     window.location.href = 'compras.html';
 });
-
+const botonVentas = document.getElementById('abrir-ventas');
+if (botonVentas) {
+    botonVentas.addEventListener('click', () => {
+        window.location.href = 'ventas.html';
+    });
+}
 // Navega a la página independiente del módulo de facturas.
 const botonFacturas = document.getElementById('abrir-facturas');
 if (botonFacturas) {
