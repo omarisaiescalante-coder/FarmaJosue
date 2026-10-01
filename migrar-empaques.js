@@ -1,6 +1,6 @@
 // Ejecutar: node migrar-empaques.js. Conserva los registros existentes y admite reejecución.
-const db = require('./database');
-async function migrar() {
+
+async function migrar(db) {
     const columnas = {
         laboratorio: 'VARCHAR(150) NULL',
         presentacion_ingreso: "VARCHAR(20) NOT NULL DEFAULT 'Unidad'",
@@ -28,5 +28,8 @@ async function migrar() {
         WHERE cantidad_empaques IS NULL`);
     console.log('Campos de empaques actualizados; registros existentes conservados.');
 }
-migrar().catch(error => { console.error('No se pudo completar la migración:', error.code || error.message); process.exitCode = 1; })
-    .finally(() => db.end());
+module.exports = { migrar };
+if (require.main === module) {
+ const db = require('./database');
+ migrar(db).catch(error => { console.error(error.message); process.exitCode = 1; }).finally(() => db.end());
+}

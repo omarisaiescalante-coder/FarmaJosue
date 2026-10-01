@@ -1,30 +1,32 @@
-# Base de datos del flujo actual
+# Base de datos del sistema
 
-El sistema conserva seis tablas:
+El sistema utiliza diez tablas: usuarios, medicamentos, medicamento_presentaciones,
+distribuidores, compras, lote, clientes, ventas, detalles_venta y detalle_venta_lotes.
 
-| Tabla | Datos que conserva |
-| --- | --- |
-| usuarios | Acceso y administración de usuarios existentes. |
-| medicamentos | Código, nombre, categoría, restricción, laboratorio, existencias, estado y fecha de registro. |
-| medicamento_presentaciones | Precios ingresados por caja, blíster, pastilla, sobre, frasco, ampolla o suero; equivalencia en unidades. |
-| distribuidores | Nombre del laboratorio/proveedor, teléfono y correo. |
-| compras | Factura, usuario, proveedor, laboratorio, fecha, total, método de pago y condición. |
-| lote | Compra y medicamento asociados, número, laboratorio, cantidades, fechas, empaque, contenido de caja y precios registrados. |
+Para una base existente, cerrar la aplicacion y ejecutar npm run migrar.
+El comando guarda primero un respaldo SQL en respaldos/ y agrega los campos y tablas
+faltantes sin eliminar registros ni columnas historicas. Se puede ejecutar nuevamente.
+El respaldo se restaura en una base vacia seleccionada previamente con USE.
+limpiar-esquema.js redirige a esta misma actualizacion y ya no elimina ventas.
 
-Los identificadores y fechas automáticas son controles internos; no requieren campos de entrada.
-El laboratorio se captura en Compras y se copia a medicamentos y lotes.
-Una compra admite varios medicamentos mediante sus lotes: no guarda un medicamento único en su encabezado.
+Para reiniciar la base, ejecutar JosueFarma.sql completo: elimina los datos actuales,
+crea las diez tablas e inserta los datos iniciales. Es el unico archivo de instalacion.
+La migracion lee de ese archivo solo las definiciones necesarias de tablas;
+no ejecuta la eliminacion de la base ni las inserciones iniciales.
 
-Los precios de venta por presentación se conservan porque ya se ingresan en Compras, aunque todavía no exista un módulo de ventas.
-Los precios del lote documentan ese ingreso; medicamento_presentaciones conserva los últimos precios registrados por presentación.
-El costo de compra por unidad se calcula al consultar el lote, dividiendo su costo total entre su cantidad inicial.
-La cantidad disponible y el stock se conservan para no alterar las existencias actuales.
+Compras convierte cajas y empaques a unidades de inventario y registra los precios
+por presentacion. Ventas valida la sesion activa, la receta y las existencias dentro
+de una transaccion; descuenta primero los lotes vigentes de menor vencimiento y
+conserva la relacion entre cada detalle y sus lotes. Facturas consulta las ventas
+registradas, incluidas las historicas sin cliente, y permite imprimirlas.
+Los detalles conservan la presentacion y el precio cobrado al vender.
 
-Se retiraron las tres tablas de ventas y los campos heredados de descripción, stock mínimo,
-precios y presentación generales del medicamento, estado de presentación, medicamento único de compra,
-costo unitario duplicado de lote y dirección del proveedor.
+La pantalla de ventas utiliza venta-pantallas.js. ventas.js es un archivo de
+compatibilidad sin logica duplicada. Las operaciones IPC se registran en main.js.
 
-Para una instalación nueva, usar JosueFarma.sql. Sus ejemplos solo representan compras.
-Para actualizar la base existente, cerrar la aplicación y ejecutar `node limpiar-esquema.js`.
-La limpieza genera previamente un respaldo SQL en `respaldos/`, incluyendo las tablas y columnas que retira.
-El respaldo se puede importar en una base vacía seleccionada con `USE` para recuperar los datos anteriores.
+Pruebas:
+- npm test: servicios y conexion entre HTML, puente y controladores.
+- npm run test:db: flujo completo en una base temporal aislada de MySQL.
+- npm run test:ui: pantallas en ventanas ocultas de Electron.
+
+No ejecutar compras-ui.test.cjs directamente con Node: requiere Electron.

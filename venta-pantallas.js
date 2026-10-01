@@ -48,11 +48,11 @@ function pintarPresentaciones() {
 
 async function cargarTabla() {
     const r = await window.farmacia.listarVentas();
-    if (r.error) return mostrarMensaje(r.error);
+    if (r.error) throw new Error(r.error);
     $('tablaVentas').innerHTML = r.datos.map((v) => `
         <tr>
-            <td>${v.id_cliente}</td>
-            <td>${escapar(v.dni_cliente)}</td>
+            <td>${v.id_cliente ?? '—'}</td>
+            <td>${escapar(v.dni_cliente || 'Sin DNI')}</td>
             <td>${new Date(v.fecha_venta).toLocaleString('es-HN')}</td>
             <td>L. ${Number(v.total).toFixed(2)}</td>
             <td>${escapar(v.metodo_pago)}</td>
@@ -66,11 +66,15 @@ $('agregarButton').addEventListener('click', () => {
     const med = catalogo.medicamentos.find((m) => m.id_medicamento === Number($('medicamento').value));
     const pres = catalogo.presentaciones.find((p) => p.id_presentacion === Number($('presentacion').value));
     const cantidad = Number($('cantidad').value);
-    if (!med || !pres || !Number.isInteger(cantidad) || cantidad <= 0)
+    if (!med || !pres || pres.id_medicamento !== med.id_medicamento || !Number.isSafeInteger(cantidad) || cantidad <= 0)
         return mostrarMensaje('Elegí un medicamento, una presentación y una cantidad válida.');
+    const unidades = cantidad * Number(pres.unidades_stock);
+    const reservadas = carrito.filter(i => i.id_medicamento === med.id_medicamento).reduce((s, i) => s + i.unidades, 0);
+    if (!Number.isSafeInteger(unidades) || unidades < 1 || reservadas + unidades > Number(med.stock_total))
+        return mostrarMensaje('La cantidad supera las existencias disponibles.');
     $('message').className = 'alert d-none';
     carrito.push({
-        id_presentacion: pres.id_presentacion, nombre: med.nombre, restriccion: med.restriccion,
+        id_medicamento: med.id_medicamento, unidades, id_presentacion: pres.id_presentacion, nombre: med.nombre, restriccion: med.restriccion,
         presentacion: pres.nombre_presentacion, precio: Number(pres.precio_venta), cantidad,
     });
     $('cantidad').value = 1;
@@ -100,14 +104,15 @@ $('guardarButton').addEventListener('click', async () => {
         return mostrarMensaje('La venta incluye medicamentos con receta médica: ingresá el DNI del cliente.');
     }
 
+    if ($('guardarButton').disabled) return;
     $('guardarButton').disabled = true;
+    try {
     const r = await window.farmacia.guardarVenta({
         dni: dni || null,
         metodo_pago: $('metodoPago').value,
         items: carrito.map((i) => ({ id_presentacion: i.id_presentacion, cantidad: i.cantidad })),
     });
-    $('guardarButton').disabled = false;
-    if (r.error) return mostrarMensaje(r.error);
+    if (r.error) throw new Error(r.error);
 
     mostrarMensaje('Venta registrada correctamente.', 'success');
     carrito = [];
@@ -115,11 +120,13 @@ $('guardarButton').addEventListener('click', async () => {
     pintarCarrito();
     await cargarTabla();
     await iniciarCatalogo(); // refresca existencias
+    } catch (error) { mostrarMensaje(error.message || 'No se pudo guardar la venta.'); }
+    finally { $('guardarButton').disabled = false; }
 });
 
 async function iniciarCatalogo() {
     const r = await window.farmacia.cargarVentas();
-    if (r.error) return mostrarMensaje(r.error);
+    if (r.error) throw new Error(r.error);
     catalogo = r.datos;
     $('medicamento').innerHTML = catalogo.medicamentos
         .map((m) => `<option value="${m.id_medicamento}">${escapar(m.nombre)}</option>`).join('');
@@ -128,14 +135,18 @@ async function iniciarCatalogo() {
 
 $('backButton').addEventListener('click', () => { window.location.href = 'index.html'; });
 $('logoutButton').addEventListener('click', async () => {
-    await window.farmacia.cerrarSesion();
-    window.location.href = 'index.html';
+    try { await window.farmacia.cerrarSesion(); window.location.href = 'index.html'; }
+    catch (error) { mostrarMensaje(error.message); }
 });
 
 (async function iniciar() {
+    try {
+    if (!window.farmacia) throw new Error('Abre la aplicación con npm start.');
     const s = await window.farmacia.obtenerSesion();
+    if (s.error) throw new Error(s.error);
     if (!s.usuario) { window.location.href = 'index.html'; return; }
     $('sessionUser').textContent = s.usuario.nombre + ' ' + s.usuario.apellido;
     await iniciarCatalogo();
     await cargarTabla();
+    } catch (error) { mostrarMensaje(error.message); }
 })();

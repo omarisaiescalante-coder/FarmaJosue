@@ -1,0 +1,8 @@
+@media print {
+    .cabecera, .controles-facturas, #facturas-mensaje, #imprimir { display: none !important; }
+    body { background: white; color: black; }
+    .contenido { max-width: none; margin: 0; padding: 0; }
+    #factura-detalle { border: none; box-shadow: none; }
+    table { width: 100%; }
+    tr { break-inside: avoid; }
+}

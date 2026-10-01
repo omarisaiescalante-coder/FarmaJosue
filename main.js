@@ -6,6 +6,18 @@ const { autenticar } = require('./auth');
 const usuarios = require('./usuarios');
 const compras = require('./compras-servicio');
 const medicamentos = require('./medicamentos-servicio');
+const ventas = require('./ventas-servicios');
+
+for (const operacion of ['cargar', 'listar', 'guardar', 'factura']) {
+    ipcMain.handle(`ventas:${operacion}`, async (_evento, datos) => {
+        try {
+            return { datos: await ventas[operacion](db, usuarioActivo, datos) };
+        } catch (error) {
+            console.error(`ventas:${operacion}`, error.code || error.message);
+            return { error: error.code ? 'No se pudo procesar la venta. Revisa MySQL y ejecuta npm run migrar.' : error.message };
+        }
+    });
+}
 
 // Conserva el usuario conectado en memoria mientras la app permanece abierta.
 let usuarioActivo = null;
@@ -126,7 +138,7 @@ for (const operacion of [
 
             return {
                 error: error.code
-                    ? 'No se pudo consultar MySQL. Revisa la conexion y las tablas de compras y lotes.'
+                    ? `No se pudo completar la operación de compras (${error.code}). Revisa la conexión y ejecuta npm run migrar si la base está desactualizada.`
                     : error.message
             };
 

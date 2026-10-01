@@ -84,6 +84,9 @@ document.getElementById('abrir-compras').addEventListener('click', () => {
     window.location.href = 'compras.html';
 });
 const botonVentas = document.getElementById('abrir-ventas');
+document.getElementById('abrir-medicamentos').addEventListener('click', () => {
+    window.location.href = 'medicamentos.html';
+});
 if (botonVentas) {
     botonVentas.addEventListener('click', () => {
         window.location.href = 'ventas.html';

@@ -7,7 +7,11 @@
     "description": "Inicio sencillo del proyecto con Electron, HTML, CSS y JavaScript.",
     "main": "main.js",
     "scripts": {
-        "start": "electron ."
+        "start": "electron .",
+        "test": "node --test compras-servicio.test.cjs modulos.test.cjs",
+        "test:db": "node esquema.test.cjs",
+        "test:ui": "node ejecutar-pruebas-ui.cjs",
+        "migrar": "node actualizar-esquema.js"
     },
     "keywords": [],
     "author": "",
