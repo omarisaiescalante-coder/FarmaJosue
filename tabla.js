@@ -468,7 +468,7 @@ async function iniciar() {
         const respuesta = await window.farmacia.obtenerSesion();
         if (respuesta.error) throw new Error(respuesta.error);
         usuario = respuesta.usuario;
-        if (!usuario) { window.location.replace('index.html'); return; }
+        if (!usuario || !['Administrador', 'Dispensador'].includes(usuario.rol)) { window.location.replace('index.html'); return; }
         document.getElementById('sessionUser').textContent = `${usuario.nombre} ${usuario.apellido}`;
         await cargar();
         guardar.disabled = limpiar.disabled = false;

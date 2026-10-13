@@ -25,7 +25,7 @@ CREATE TABLE usuarios (
   direccion VARCHAR(255),
   nombre_usuario VARCHAR(50) UNIQUE NOT NULL,
   contrasena VARCHAR(255) NOT NULL,
-  rol ENUM('Administrador', 'Cajero') NOT NULL,
+  rol ENUM('Administrador', 'Cajero', 'Dispensador') NOT NULL,
   estado ENUM('Activo', 'Inactivo') DEFAULT 'Activo',
   fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -237,9 +237,9 @@ VALUES (1, 'Laboratorio de ejemplo', 'COM-0001', 1, 1, '2026-09-25', 200.00, 'Ef
 -- LOTE
 INSERT INTO lote
   (id_lote, laboratorio, id_medicamento, numero_lote, cantidad_inicial, cantidad_disponible,
-   fecha_fabricacion, fecha_vencimiento, presentacion_ingreso, contenido_caja,
-   paquetes_por_caja, unidades_por_blister, cantidad_empaques, precio_empaque,
-   precio_venta, precio_venta_contenido, precio_venta_unidad, costo_total, estado, id_compra)
+  fecha_fabricacion, fecha_vencimiento, presentacion_ingreso, contenido_caja,
+  paquetes_por_caja, unidades_por_blister, cantidad_empaques, precio_empaque,
+  precio_venta, precio_venta_contenido, precio_venta_unidad, costo_total, estado, id_compra)
 VALUES (1, 'Laboratorio de ejemplo', 1, 'LOT-000001', 100, 100, '2026-01-01', '2028-01-01',
   'Caja', 'Blister', 10, 10, 1, 200.00, 250.00, 28.00, 3.00, 200.00, 'Disponible', 1);
 

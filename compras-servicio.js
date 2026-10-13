@@ -6,10 +6,10 @@ const { validarEmpaque } = require('./empaques');
 async function autorizar(db, sesion) {
     if (!sesion) throw new Error('Iniciá sesión para continuar.');
     const [usuarios] = await db.execute(
-        "SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND rol = 'Administrador' AND estado = 'Activo'",
+        "SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND rol IN ('Administrador', 'Dispensador') AND estado = 'Activo'",
         [sesion.id_usuario],
     );
-    if (!usuarios.length) throw new Error('Compras requiere un administrador activo.');
+    if (!usuarios.length) throw new Error('Compras requiere un administrador o dispensador activo.');
 }
 
 async function cargar(db, sesion) {

@@ -38,8 +38,8 @@ async function guardar(db, sesion, datos) {
     const limites = {
         nombre: 100,
         apellido: 100,
-        identidad: 20,
-        telefono: 20,
+        identidad: 15,
+        telefono: 9,
         correo: 150,
         direccion: 255,
         nombre_usuario: 50,
@@ -53,10 +53,14 @@ async function guardar(db, sesion, datos) {
     // Comprueba los campos obligatorios, el correo y los valores permitidos.
     if (!valores.nombre || !valores.apellido || !valores.nombre_usuario)
         throw new Error('Nombre, apellido y usuario son obligatorios.');
+    if (!/^\d{4}-\d{4}-\d{5}$/.test(valores.identidad || ''))
+        throw new Error('La identidad es obligatoria y debe tener el formato 0000-0000-00000.');
+    if (!/^\d{4}-\d{4}$/.test(valores.telefono || ''))
+        throw new Error('El teléfono es obligatorio y debe tener el formato 0000-0000.');
     if (valores.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valores.correo))
         throw new Error('El correo no es válido.');
     if (
-        !['Administrador', 'Cajero'].includes(datos.rol) ||
+        !['Administrador', 'Cajero', 'Dispensador'].includes(datos.rol) ||
         !['Activo', 'Inactivo'].includes(datos.estado)
     )
         throw new Error('Rol o estado inválidos.');
@@ -69,12 +73,17 @@ async function guardar(db, sesion, datos) {
             'No podés desactivar tu cuenta ni quitarte el rol de administrador.',
         );
     if (
-        // Exige una clave de 8 a 1024 caracteres al crear o cambiar la contraseña.
+        // Aplica los requisitos al crear o cambiar la contraseña.
         typeof datos.contrasena !== 'string' ||
         datos.contrasena.length > 1024 ||
-        ((!id || datos.contrasena) && datos.contrasena.length < 8)
+        ((!id || datos.contrasena) && (
+            datos.contrasena.length < 9 ||
+            !/\p{Lu}/u.test(datos.contrasena) ||
+            !/[0-9]/.test(datos.contrasena) ||
+            !/[^\p{L}\p{N}\s]/u.test(datos.contrasena)
+        ))
     )
-        throw new Error('La contraseña debe tener entre 8 y 1024 caracteres.');
+        throw new Error('La contraseña debe tener entre 9 y 1024 caracteres, una mayúscula, un número y un carácter especial.');
     valores.rol = datos.rol;
     valores.estado = datos.estado;
     // Una contraseña vacía al editar conserva el hash existente.

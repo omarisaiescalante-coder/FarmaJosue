@@ -58,7 +58,7 @@ $('salir').addEventListener('click', async () => {
         if (!window.farmacia) throw new Error('Abre la aplicación con npm start.');
         const s = await window.farmacia.obtenerSesion();
         if (s.error) throw new Error(s.error);
-        if (!s.usuario) { window.location.replace('index.html'); return; }
+        if (!s.usuario || !['Administrador', 'Cajero', 'Dispensador'].includes(s.usuario.rol)) { window.location.replace('index.html'); return; }
         await cargarMedicamentos();
     } catch (error) { mensaje(error.message); }
 })();

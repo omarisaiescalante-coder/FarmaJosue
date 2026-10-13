@@ -8,7 +8,7 @@ const compras = require('./compras-servicio');
 const medicamentos = require('./medicamentos-servicio');
 const ventas = require('./ventas-servicios');
 
-for (const operacion of ['cargar', 'listar', 'guardar', 'factura']) {
+for (const operacion of ['cargar', 'listar', 'guardar', 'factura', 'resumen']) {
     ipcMain.handle(`ventas:${operacion}`, async (_evento, datos) => {
         try {
             return { datos: await ventas[operacion](db, usuarioActivo, datos) };

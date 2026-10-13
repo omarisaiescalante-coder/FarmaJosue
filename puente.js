@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('farmacia', {
     // Ventas (tu módulo)
     cargarVentas: () => ipcRenderer.invoke('ventas:cargar'),
     listarVentas: () => ipcRenderer.invoke('ventas:listar'),
+    resumenVentas: () => ipcRenderer.invoke('ventas:resumen'),
     guardarVenta: (datos) => ipcRenderer.invoke('ventas:guardar', datos),
     obtenerFactura: (id) => ipcRenderer.invoke('ventas:factura', id),
 });

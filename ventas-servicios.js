@@ -2,20 +2,41 @@ const { randomBytes } = require('node:crypto');
 const { autorizar } = require('./sesion-servicio');
 
 async function cargar(db, usuario) {
-    await autorizar(db, usuario);
+    await autorizar(db, usuario, 'ventas');
     const [medicamentos] = await db.execute("SELECT id_medicamento, codigo, nombre, restriccion, stock_total, estado FROM medicamentos WHERE estado = 'Disponible' ORDER BY nombre");
     const [presentaciones] = await db.execute('SELECT * FROM medicamento_presentaciones');
     return { medicamentos, presentaciones: presentaciones.filter(p => p.estado !== 'Inactiva') };
 }
 async function listar(db, usuario) {
-    await autorizar(db, usuario);
+    await autorizar(db, usuario, 'ventas');
     const [filas] = await db.execute(`SELECT v.id_venta, v.numero_factura, v.id_cliente, c.dni AS dni_cliente,
         DATE_FORMAT(v.fecha_venta, '%Y-%m-%d %H:%i:%s') AS fecha_venta, v.total, v.metodo_pago, v.estado
         FROM ventas v LEFT JOIN clientes c ON c.id_cliente = v.id_cliente ORDER BY v.id_venta DESC`);
     return filas;
 }
+async function resumen(db, usuario) {
+    await autorizar(db, usuario, 'ventas');
+    const [[resultado]] = await db.execute("SELECT COALESCE(SUM(total), 0) AS total, COUNT(*) AS cantidad FROM ventas WHERE estado = 'Completada'");
+    const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Tegucigalpa', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    const fin = new Date(hoy + 'T00:00:00Z');
+    const dias = Array.from({ length: 7 }, (_, i) => {
+        const fecha = new Date(fin);
+        fecha.setUTCDate(fecha.getUTCDate() - 6 + i);
+        return fecha.toISOString().slice(0, 10);
+    });
+    const manana = new Date(fin);
+    manana.setUTCDate(manana.getUTCDate() + 1);
+    const [semanales] = await db.execute(`SELECT DATE_FORMAT(fecha_venta, '%Y-%m-%d') AS fecha,
+        SUM(total) AS total, COUNT(*) AS cantidad FROM ventas
+        WHERE estado = 'Completada' AND fecha_venta >= ? AND fecha_venta < ?
+        GROUP BY DATE_FORMAT(fecha_venta, '%Y-%m-%d') ORDER BY fecha`, [dias[0], manana.toISOString().slice(0, 10)]);
+    return { ...resultado, semana: dias.map(fecha => {
+        const dia = semanales.find(fila => fila.fecha === fecha);
+        return { fecha, total: Number(dia?.total || 0), cantidad: Number(dia?.cantidad || 0) };
+    }) };
+}
 async function guardar(db, usuario, datos) {
-    await autorizar(db, usuario);
+    await autorizar(db, usuario, 'ventas');
     if (!datos || !Array.isArray(datos.items) || !datos.items.length) throw new Error('Agrega al menos un medicamento.');
     const dni = String(datos.dni || '').trim() || null;
     if (dni && dni.length > 20) throw new Error('El DNI admite hasta 20 caracteres.');
@@ -85,7 +106,7 @@ async function guardar(db, usuario, datos) {
     finally { conn.release(); }
 }
 async function factura(db, usuario, id) {
-    await autorizar(db, usuario);
+    await autorizar(db, usuario, 'ventas');
     if (!Number.isSafeInteger(id) || id < 1) throw new Error('Venta inválida.');
     const [[venta]] = await db.execute(`SELECT v.*, DATE_FORMAT(v.fecha_venta, '%Y-%m-%d %H:%i:%s') AS fecha_venta,
         c.dni AS dni_cliente, CONCAT(u.nombre, ' ', u.apellido) AS vendedor FROM ventas v
@@ -95,4 +116,4 @@ async function factura(db, usuario, id) {
         FROM detalles_venta d JOIN medicamentos m USING (id_medicamento) WHERE d.id_venta = ? ORDER BY d.id_detalle_venta`, [id]);
     return { venta, detalle };
 }
-module.exports = { cargar, listar, guardar, factura };
+module.exports = { cargar, listar, guardar, factura, resumen };
