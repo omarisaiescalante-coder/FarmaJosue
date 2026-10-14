@@ -38,7 +38,9 @@ function escenario(fallarLote = false) {
 
 test('Guarda varios lotes, calcula el total en centavos y actualiza el inventario', async () => {
     const e = escenario();
-    await servicio.guardar(e.db, { id_usuario: 1 }, e.datos);
+    const resultado = await servicio.guardar(e.db, { id_usuario: 1 }, e.datos);
+    assert.equal(resultado.numero_factura, 'FAC#20');
+    assert.equal(e.consultas.find(c => c.sql.startsWith('UPDATE compras')).args[0], 'FAC#20');
     assert.equal(e.consultas.find(c => c.sql.startsWith('INSERT INTO compras')).args[4], '25.00');
     const lotes = e.consultas.filter(c => c.sql.startsWith('INSERT INTO lote'));
     assert.equal(lotes.length, 2);
@@ -47,10 +49,38 @@ test('Guarda varios lotes, calcula el total en centavos y actualiza el inventari
     assert.deepEqual(e.pasos, ['inicio', 'commit', 'release']);
 });
 
+test('Consulta el siguiente correlativo real sin modificar compras existentes', async () => {
+    const consultas = [];
+    const db = {
+        execute: async () => [[{ id_usuario: 1 }]],
+        query: async sql => {
+            consultas.push(sql);
+            if (sql.includes('information_schema.TABLES')) return [[{ siguiente: 230 }]];
+            return [[]];
+        },
+    };
+    const datos = await servicio.cargar(db, { id_usuario: 1 });
+    assert.equal(datos.siguienteFactura, 'FAC#230');
+    assert(consultas.every(sql => sql.trim().startsWith('SELECT')));
+});
+
 test('Un lote duplicado revierte la compra completa', async () => {
     const e = escenario(true);
     await assert.rejects(servicio.guardar(e.db, { id_usuario: 1 }, e.datos), /ya está registrado/);
     assert.deepEqual(e.pasos, ['inicio', 'rollback', 'release']);
+});
+
+test('Sueros por caja convierte cajas a sueros y conserva costo y precios de venta', async () => {
+    const e = escenario();
+    e.datos.lotes = [{ ...e.datos.lotes[0], presentacion_ingreso: 'Sueros por caja',
+        cantidad: '2', paquetes_por_caja: '12', precio: '100', precio_venta: '150',
+        precio_venta_contenido: '15', fecha_fabricacion: '2025-01-01' }];
+    await servicio.guardar(e.db, { id_usuario: 1 }, e.datos);
+    const alta = e.consultas.find(c => c.sql.startsWith('INSERT INTO lote'));
+    assert.equal(alta.args[3], 24);
+    assert.equal(alta.args[6], '200.00');
+    const precios = e.consultas.filter(c => c.sql.startsWith('INSERT INTO medicamento_presentaciones'));
+    assert.deepEqual(precios.map(c => c.args.slice(1)), [['Sueros por caja', '150.00', 12], ['Suero', '15.00', 1]]);
 });
 
 test('Rechaza compras sin lotes y valores inválidos antes de guardar', async () => {

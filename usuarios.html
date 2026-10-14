@@ -21,7 +21,7 @@
             <!-- Cabecera con acceso al inicio, nombre del usuario y cierre de sesión. -->
             <header class="cabecera">
                 <a href="index.html" id="inicio" class="nombre"
-                    ><span class="marca pequena" aria-hidden="true">✚</span> Farmacia
+                    ><img class="logo-marca" src="assets/logo-farmajosue.png" alt=""> Farmacia
                     Josué</a
                 >
                 <!-- JavaScript completa aquí el nombre y el rol de la cuenta conectada. -->
@@ -57,17 +57,25 @@
                                     required
                             /></label>
                             <label
-                                >Identidad<input
+                                >Identidad *<input
                                     name="identidad"
-                                    maxlength="20"
-                                    placeholder="0706-2000-04500"
+                                    maxlength="15"
+                                    inputmode="numeric"
+                                    pattern="[0-9]{4}-[0-9]{4}-[0-9]{5}"
+                                    title="Ingresá la identidad completa: 0000-0000-00000"
+                                    required
+                                    placeholder="0000-0000-00000"
                             /></label>
                             <label
-                                >Teléfono<input
+                                >Teléfono *<input
                                     name="telefono"
                                     type="tel"
-                                    maxlength="20"
-                                    placeholder="9999-9999"
+                                    maxlength="9"
+                                    inputmode="numeric"
+                                    pattern="[0-9]{4}-[0-9]{4}"
+                                    title="Ingresá el teléfono completo: 0000-0000"
+                                    required
+                                    placeholder="0000-0000"
                             /></label>
                             <label
                                 >Correo<input name="correo" type="email" maxlength="150"
@@ -85,8 +93,10 @@
                             <label
                                 >Contraseña<input
                                     name="contrasena"
-                                    type="password"
-                                    minlength="8"
+                                    type="text"
+                                    minlength="9"
+                                    pattern="(?=.*\p{Lu})(?=.*[0-9])(?=.*[^\p{L}\p{N}\s]).{9,1024}"
+                                    title="Mínimo 9 caracteres, una mayúscula, un número y un carácter especial."
                                     maxlength="1024"
                                     autocomplete="new-password"
                                     required
@@ -96,6 +106,7 @@
                                 >Rol<select name="rol">
                                     <option>Administrador</option>
                                     <option selected>Cajero</option>
+                                    <option>Dispensador</option>
                                 </select></label
                             >
                             <label
@@ -106,16 +117,13 @@
                             >
                         </div>
                         <!-- Explica cómo conservar la contraseña al editar un registro. -->
-                        <p id="clave-ayuda" class="pie">
-                            Mínimo 8 caracteres. Al editar, dejala vacía para conservar la
-                            contraseña.
-                        </p>
+                        
                         <!-- Guardar envía los datos; cancelar limpia el formulario sin guardar. -->
                         <div class="acciones">
                             <button id="guardar-usuario" type="submit">
                                 Guardar usuario</button
                             ><button id="cancelar-usuario" type="button">
-                                Limpiar / cancelar
+                                Limpiar
                             </button>
                         </div>
                     </form>
@@ -129,9 +137,6 @@
                             type="search"
                             placeholder="Buscar usuario..."
                         />
-                        <button id="recargar-usuarios" type="button">
-                            Actualizar lista
-                        </button>
                         <!-- Contenedor que permite desplazar horizontalmente la tabla en pantallas angostas. -->
                         <div class="tabla-contenedor">
                             <table>

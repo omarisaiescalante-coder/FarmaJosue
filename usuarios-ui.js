@@ -10,6 +10,31 @@ let versionUsuarios = 0;
 // Evita guardar dos veces o cambiar de registro durante un guardado.
 let guardandoUsuario = false;
 
+// Inserta los guiones y limita los campos a la cantidad de dígitos permitida.
+function formatearNumero(valor, grupos) {
+    const digitos = valor.replace(/\D/g, '').slice(0, grupos.reduce((a, b) => a + b, 0));
+    let inicio = 0;
+    return grupos.map((cantidad) => {
+        const parte = digitos.slice(inicio, inicio + cantidad);
+        inicio += cantidad;
+        return parte;
+    }).filter(Boolean).join('-');
+}
+for (const [nombre, grupos] of [['identidad', [4, 4, 5]], ['telefono', [4, 4]]]) {
+    const campo = formUsuario.elements[nombre];
+    campo.addEventListener('input', () => {
+        const posicion = campo.selectionStart;
+        const antes = campo.value.slice(0, posicion).replace(/\D/g, '').length;
+        campo.value = formatearNumero(campo.value, grupos);
+        let cursor = 0, digitos = 0;
+        while (cursor < campo.value.length && digitos < antes) {
+            if (/\d/.test(campo.value[cursor])) digitos++;
+            cursor++;
+        }
+        campo.setSelectionRange(cursor, cursor);
+    });
+}
+
 // Vacía el formulario y vuelve al modo de crear usuario.
 function limpiarUsuario() {
     usuarioEditado = null;
@@ -110,8 +135,6 @@ document.getElementById('volver-inicio').addEventListener('click', () => {
 document.getElementById('cancelar-usuario').addEventListener('click', limpiarUsuario);
 // Actualiza el filtro a medida que se escribe.
 document.getElementById('buscar-usuario').addEventListener('input', dibujarUsuarios);
-// Consulta nuevamente la base de datos al pulsar Actualizar lista.
-document.getElementById('recargar-usuarios').addEventListener('click', cargarUsuarios);
 // Descarta las respuestas pendientes, limpia la vista y cierra la sesión.
 document.getElementById('salir').addEventListener('click', async () => {
     ++versionUsuarios;
@@ -126,7 +149,7 @@ document.getElementById('salir').addEventListener('click', async () => {
 // Recoge los campos del formulario y envía un alta o una edición.
 formUsuario.addEventListener('submit', async (evento) => {
     evento.preventDefault();
-    if (guardandoUsuario) return;
+    if (guardandoUsuario || !formUsuario.reportValidity()) return;
     guardandoUsuario = true;
     // FormData convierte los campos con name en datos; un ID nulo indica un alta.
     const datos = Object.fromEntries(new FormData(formUsuario));

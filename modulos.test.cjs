@@ -4,6 +4,38 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const ventas = require('./ventas-servicios');
 const medicamentos = require('./medicamentos-servicio');
+const usuarios = require('./usuarios');
+const { autorizar } = require('./sesion-servicio');
+
+test('Los permisos se verifican con el rol activo de la base y no con el declarado en la sesión', async () => {
+    const matriz = { Administrador: ['medicamentos', 'ventas', 'compras'], Cajero: ['medicamentos', 'ventas'], Dispensador: ['medicamentos', 'compras'] };
+    for (const [rol, modulos] of Object.entries(matriz)) {
+        const db = { execute: async (_sql, args) => [args.slice(1).includes(rol) ? [{ id_usuario: 1 }] : []] };
+        for (const modulo of ['medicamentos', 'ventas', 'compras']) {
+            const resultado = autorizar(db, { id_usuario: 1, rol: 'Administrador' }, modulo);
+            if (modulos.includes(modulo)) await resultado;
+            else await assert.rejects(resultado);
+        }
+    }
+});
+
+test('Usuarios exige identidad, teléfono y contraseña con los requisitos antes de escribir', async () => {
+    const consultas = [];
+    const db = { execute: async (sql) => { consultas.push(sql); return [[{ id_usuario: 1 }]]; } };
+    const datos = { nombre: 'Ana', apellido: 'Pérez', identidad: '0801-2000-12345', telefono: '9999-1234', correo: '', direccion: '', nombre_usuario: 'ana', rol: 'Cajero', estado: 'Activo', contrasena: 'Clave123!' };
+    for (const cambio of [
+        { identidad: '' }, { identidad: '0801200012345' }, { identidad: '0801-2000-123456' },
+        { telefono: '' }, { telefono: '99991234' }, { telefono: '9999-12345' },
+        { contrasena: 'Clave12!' }, { contrasena: 'clave123!' }, { contrasena: 'Claveabc!' },
+        { contrasena: 'Clave1234' }, { contrasena: 'Clave123 ' },
+    ]) await assert.rejects(usuarios.guardar(db, { id_usuario: 1 }, { ...datos, ...cambio }));
+    assert(consultas.every(sql => sql.startsWith('SELECT')));
+    await usuarios.guardar(db, { id_usuario: 1 }, datos);
+    assert(consultas.at(-1).startsWith('INSERT'));
+    await usuarios.guardar(db, { id_usuario: 1 }, { ...datos, id_usuario: 2, contrasena: '' });
+    assert(consultas.at(-1).startsWith('UPDATE'));
+    assert(!consultas.at(-1).includes('contrasena'));
+});
 
 test('Cada operación del puente tiene un controlador Electron registrado', () => {
     const canales = new Map();
@@ -24,6 +56,48 @@ test('Todos los scripts locales referenciados por HTML existen y compilan', () =
             new vm.Script(fs.readFileSync(src, 'utf8'), { filename: src });
         }
     }
+});
+
+test('Proveedor recorre preload, IPC Main y servicio al guardar', async () => {
+    const canales = new Map();
+    const escrituras = [];
+    const db = {
+        execute: async (sql, args) => {
+            if (sql.startsWith('SELECT')) return [[{ id_usuario: 1 }]];
+            escrituras.push({ sql, args }); return [{ insertId: 17 }];
+        },
+        query: async () => [[]],
+    };
+    const electron = { ipcMain: { handle: (canal, fn) => canales.set(canal, fn) }, app: { whenReady: () => ({ then() {} }), on() {} } };
+    vm.runInNewContext(fs.readFileSync('main.js', 'utf8'), {
+        require: nombre => nombre === 'electron' ? electron : nombre === './database' ? db
+            : nombre === './auth' ? { autenticar: async () => ({ id_usuario: 1 }) } : require(nombre),
+        console, __dirname, process,
+    });
+    let api;
+    vm.runInNewContext(fs.readFileSync('puente.js', 'utf8'), {
+        require: () => ({ contextBridge: { exposeInMainWorld: (_nombre, valor) => { api = valor; } },
+            ipcRenderer: { invoke: async (canal, datos) => {
+                assert(canales.has(canal), `Falta handler ${canal}`);
+                return canales.get(canal)({}, datos);
+            } },
+        }),
+    });
+    await api.iniciarSesion('prueba', 'clave');
+    const respuesta = await api.guardarProveedor({ nombre: 'Proveedor IPC', telefono: '9999-9999', correo: 'ipc@example.com' });
+    assert.equal(respuesta.datos.id_distribuidor, 17);
+    assert.equal(escrituras[0].args[0], 'Proveedor IPC');
+    await api.listarProveedores();
+});
+
+test('Preload explica cómo recuperar una instancia con handlers antiguos', async () => {
+    let api;
+    vm.runInNewContext(fs.readFileSync('puente.js', 'utf8'), {
+        require: () => ({ contextBridge: { exposeInMainWorld: (_nombre, valor) => { api = valor; } },
+            ipcRenderer: { invoke: async () => { throw new Error("No handler registered for 'proveedores:guardar'"); } },
+        }),
+    });
+    assert.match((await api.guardarProveedor({})).error, /npm start/);
 });
 test('Ventas y Medicamentos rechazan sesiones inexistentes o desactivadas', async () => {
     const db = { execute: async () => [[]] };

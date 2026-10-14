@@ -28,6 +28,7 @@ async function respaldar(db) {
 
 async function actualizar(db, { respaldo = true } = {}) {
     if (respaldo) await respaldar(db);
+    await db.query("ALTER TABLE usuarios MODIFY COLUMN rol ENUM('Administrador', 'Cajero', 'Dispensador') NOT NULL");
     await migrar(db);
     // El alta actual registra precios y empaque en lotes/presentaciones.
     // Las columnas históricas se conservan, pero no deben bloquear nuevas altas.

@@ -1,14 +1,14 @@
 {
     "name": "farma-josue",
     "devDependencies": {
-        "electron": "^44.5.1"
+        "electron": "^44.7.1"
     },
     "version": "1.0.0",
     "description": "Inicio sencillo del proyecto con Electron, HTML, CSS y JavaScript.",
     "main": "main.js",
     "scripts": {
         "start": "electron .",
-        "test": "node --test compras-servicio.test.cjs modulos.test.cjs",
+        "test": "node --test compras-servicio.test.cjs proveedores-servicio.test.cjs modulos.test.cjs",
         "test:db": "node esquema.test.cjs",
         "test:ui": "node ejecutar-pruebas-ui.cjs",
         "migrar": "node actualizar-esquema.js"
@@ -18,7 +18,7 @@
     "license": "ISC",
     "type": "commonjs",
     "dependencies": {
-        "mysql2": "^3.24.5"
+        "mysql2": "^3.24.6"
     },
     "repository": {
         "type": "git",

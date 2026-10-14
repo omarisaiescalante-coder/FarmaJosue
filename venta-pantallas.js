@@ -144,7 +144,7 @@ $('logoutButton').addEventListener('click', async () => {
     if (!window.farmacia) throw new Error('Abre la aplicación con npm start.');
     const s = await window.farmacia.obtenerSesion();
     if (s.error) throw new Error(s.error);
-    if (!s.usuario) { window.location.href = 'index.html'; return; }
+    if (!s.usuario || !['Administrador', 'Cajero'].includes(s.usuario.rol)) { window.location.href = 'index.html'; return; }
     $('sessionUser').textContent = s.usuario.nombre + ' ' + s.usuario.apellido;
     await iniciarCatalogo();
     await cargarTabla();

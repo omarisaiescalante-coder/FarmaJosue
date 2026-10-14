@@ -36,7 +36,7 @@ $('salir').addEventListener('click', async () => { try { await window.farmacia.c
         if (!window.farmacia) throw new Error('Abre la aplicación con npm start.');
         const s = await window.farmacia.obtenerSesion();
         if (s.error) throw new Error(s.error);
-        if (!s.usuario) { window.location.replace('index.html'); return; }
+        if (!s.usuario || !['Administrador', 'Cajero'].includes(s.usuario.rol)) { window.location.replace('index.html'); return; }
         $('sesion-nombre').textContent = s.usuario.nombre + ' ' + s.usuario.apellido;
         await cargar();
         $('pagina-facturas').hidden = false;
