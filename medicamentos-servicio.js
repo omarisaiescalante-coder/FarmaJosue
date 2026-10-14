@@ -6,7 +6,7 @@ const CAMPO_EQUIVALENCIA = 'unidades_por_presentacion';
 
 // Devuelve cada medicamento con sus presentaciones (precios) y sus lotes, en una sola llamada.
 async function listar(db, sesion) {
-    await autorizar(db, sesion);
+    await autorizar(db, sesion, 'medicamentos');
     const [meds] = await db.query(`SELECT id_medicamento, nombre, categoria, restriccion, stock_total, estado
         FROM medicamentos ORDER BY nombre`);
     const [pres] = await db.query('SELECT * FROM medicamento_presentaciones ORDER BY id_presentacion');
@@ -44,7 +44,7 @@ async function listar(db, sesion) {
 }
 
 async function lotes(db, sesion, id) {
-    await autorizar(db, sesion);
+    await autorizar(db, sesion, 'medicamentos');
     if (!Number.isSafeInteger(id) || id < 1) throw new Error('Medicamento inválido.');
     const [filas] = await db.execute(`SELECT numero_lote, DATE_FORMAT(fecha_vencimiento, '%Y-%m-%d') AS fecha_vencimiento,
         cantidad_disponible, precio_venta FROM lote WHERE id_medicamento = ? ORDER BY fecha_vencimiento, id_lote`, [id]);
@@ -52,7 +52,7 @@ async function lotes(db, sesion, id) {
 }
 
 async function actualizar(db, sesion, datos) {
-    await autorizar(db, sesion);
+    await autorizar(db, sesion, 'medicamentos');
     const id = Number(datos?.id), nombre = String(datos?.nombre || '').trim(), categoria = String(datos?.categoria || '').trim();
     if (!Number.isSafeInteger(id) || id < 1) throw new Error('Medicamento inválido.');
     if (!nombre || nombre.length > 150 || categoria.length > 100) throw new Error('Revisa el nombre y la categoría.');
