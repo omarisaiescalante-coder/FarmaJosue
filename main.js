@@ -5,6 +5,7 @@ const db = require('./database');
 const { autenticar } = require('./auth');
 const usuarios = require('./usuarios');
 const compras = require('./compras-servicio');
+const proveedores = require('./proveedores-servicio');
 const medicamentos = require('./medicamentos-servicio');
 const ventas = require('./ventas-servicios');
 
@@ -21,6 +22,12 @@ for (const operacion of ['cargar', 'listar', 'guardar', 'factura', 'resumen']) {
 
 // Conserva el usuario conectado en memoria mientras la app permanece abierta.
 let usuarioActivo = null;
+for (const operacion of ['listar', 'guardar', 'eliminar']) {
+    ipcMain.handle(`proveedores:${operacion}`, async (_evento, datos) => {
+        try { return { datos: await proveedores[operacion](db, usuarioActivo, datos) }; }
+        catch (error) { return { error: error.code ? 'No se pudo completar la operación de proveedores.' : error.message }; }
+    });
+}
 
 
 // Recibe las credenciales desde el puente y valida el acceso en MySQL.

@@ -1,5 +1,12 @@
 // Carga el puente seguro y el cliente de mensajes de Electron.
 const { contextBridge, ipcRenderer } = require('electron');
+async function solicitarProveedor(operacion, datos) {
+    try { return await ipcRenderer.invoke(`proveedores:${operacion}`, datos); }
+    catch (error) {
+        if (/No handler registered/.test(error.message)) return { error: 'La aplicación sigue ejecutando una versión anterior. Cerrá todas sus ventanas y volvé a abrirla con npm start para activar Laboratorios y proveedores.' };
+        return { error: 'No se pudo comunicar con el módulo de proveedores. Reiniciá la aplicación.' };
+    }
+}
 
 // Expone window.farmacia: las pantallas solo pueden solicitar estas operaciones.
 contextBridge.exposeInMainWorld('farmacia', {
@@ -21,6 +28,9 @@ contextBridge.exposeInMainWorld('farmacia', {
 
     // Compras
     cargarCompras: () => ipcRenderer.invoke('compras:cargar'),
+    listarProveedores: () => solicitarProveedor('listar'),
+    guardarProveedor: datos => solicitarProveedor('guardar', datos),
+    eliminarProveedor: id => solicitarProveedor('eliminar', id),
     guardarCompra: (datos) => ipcRenderer.invoke('compras:guardar', datos),
     listarLotesCompra: (id) => ipcRenderer.invoke('compras:lotes', id),
     registrarMedicamento: (datos) =>

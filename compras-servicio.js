@@ -25,7 +25,10 @@ async function cargar(db, sesion) {
         FROM medicamentos m LEFT JOIN lote l ON l.id_lote =
             (SELECT MAX(ultimo.id_lote) FROM lote ultimo WHERE ultimo.id_medicamento = m.id_medicamento)
         WHERE m.estado <> 'Inactivo' ORDER BY m.nombre`);
-    return { config, compras, proveedores, medicamentos };
+    const [[secuencia]] = await db.query(`SELECT AUTO_INCREMENT AS siguiente
+        FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'compras'`);
+    const siguienteFactura = `FAC#${secuencia.siguiente}`;
+    return { config, compras, proveedores, medicamentos, siguienteFactura };
 }
 
 async function lotes(db, sesion, id) {
@@ -123,7 +126,7 @@ async function guardar(db, sesion, datos) {
             (numero_factura, id_usuario, id_distribuidor, fecha_compra, total, metodo_pago, estado)
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [randomUUID(), sesion.id_usuario, proveedor, fecha, (totalCentavos / 100).toFixed(2), datos.metodo_pago, datos.estado]);
-        const factura = `COM-${String(alta.insertId).padStart(4, '0')}`;
+        const factura = `FAC#${alta.insertId}`;
         await conexion.execute('UPDATE compras SET numero_factura = ?, laboratorio = ? WHERE id_compra = ?', [factura, nombre, alta.insertId]);
         for (const lote of nuevosLotes) {
             try {

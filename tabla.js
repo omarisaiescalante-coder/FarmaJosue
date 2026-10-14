@@ -6,6 +6,7 @@ let usuario;
 let versionLotes = 0;
 let catalogoMedicamentos = [];
 let siguienteLote = 0;
+let siguienteFactura;
 
 function actualizarTotales() {
     let total = 0;
@@ -15,6 +16,11 @@ function actualizarTotales() {
         const centavos = Math.round(precio * 100) * cantidad;
         const subtotal = Number.isSafeInteger(centavos) && centavos >= 0 ? centavos : 0;
         lote.querySelector('[data-total-lote]').textContent = `Precio de compra total: L ${(subtotal / 100).toFixed(2)}`;
+        const forma = lote.querySelector('[data-campo="presentacion_ingreso"]').value;
+        const paquetes = Number(lote.querySelector('[data-campo="paquetes_por_caja"]').value);
+        const pastillas = Number(lote.querySelector('[data-campo="unidades_por_blister"]').value);
+        const unidades = cantidad * (forma === 'Caja' ? paquetes * pastillas : forma === 'Sueros por caja' ? paquetes : 1);
+        lote.querySelector('[data-unidades-lote]').textContent = `Unidades totales a ingresar: ${Number.isSafeInteger(unidades) && unidades >= 0 ? unidades : 0}`;
         total += subtotal;
     }
     form.elements.total.value = (total / 100).toFixed(2);
@@ -34,17 +40,18 @@ function agregarLote() {
         ['id_medicamento', '', 'hidden'], ['laboratorio', '', 'hidden'],
         ['presentacion_ingreso', 'Tipo de empaque que ingresa', 'select'],
         ['contenido_caja', 'Contenido de la caja', 'select'],
+        ['cantidad', 'Cantidad de empaques a ingresar', 'number'],
         ['paquetes_por_caja', 'Blísteres por caja', 'number'],
         ['unidades_por_blister', 'Pastillas por blíster', 'number'],
-        ['precio_venta', 'Precio de venta por empaque (L)', 'number'],
+        ['precio', 'Precio de compra por caja contenedora', 'number'],
+        ['precio_venta', 'Precio de venta unitario (L)', 'number'],
         ['precio_venta_contenido', 'Precio de venta por blíster (L)', 'number'],
         ['precio_venta_unidad', 'Precio de venta por unidad (L)', 'number'],
-        ['cantidad', 'Cantidad de empaques a ingresar', 'number'],
         ['fecha_fabricacion', 'Fecha de fabricación', 'date'], ['fecha_vencimiento', 'Fecha de vencimiento', 'date'],
-        ['precio', 'Precio de compra por empaque (L)', 'number'],
     ]) {
         const grupo = document.createElement('div');
         grupo.className = 'col-12 col-md-6';
+        if (campo.startsWith('precio_venta')) grupo.className = 'col-12 col-md-4';
         const label = document.createElement('label');
         label.className = 'form-label';
         label.textContent = titulo;
@@ -52,12 +59,13 @@ function agregarLote() {
         input.id = `lote-${numero}-${campo}`;
         label.htmlFor = input.id;
         input.dataset.campo = campo;
-        input.className = 'form-control';
+        input.className = tipo === 'select' ? 'form-select' : 'form-control';
         input.required = tipo !== 'hidden' && campo !== 'numero_lote';
         if (tipo === 'select') {
                 input.add(new Option('Seleccioná...', ''));
-                const opciones = campo === 'contenido_caja' ? ['Blister', 'Sobre'] : ['Caja', 'Frasco', 'Ampolla', 'Suero'];
-                for (const opcion of opciones) input.add(new Option(opcion === 'Blister' ? 'Blíster' : opcion, opcion));
+                const opciones = campo === 'contenido_caja' ? ['Blister', 'Suero'] : ['Caja', 'Frasco', 'Ampolla', 'Suero', 'Sueros por caja'];
+                const etiquetas = { Caja: 'Caja de pastillas', Suero: campo === 'contenido_caja' ? 'Suero' : 'Suero unitario', Blister: 'Blíster' };
+                for (const opcion of opciones) input.add(new Option(etiquetas[opcion] || opcion, opcion));
         } else input.type = tipo;
         if (tipo === 'hidden') grupo.hidden = true;
         if (campo === 'numero_lote') { input.maxLength = 50; input.placeholder = 'Escribí el lote o dejá vacío para generarlo'; }
@@ -70,28 +78,53 @@ function agregarLote() {
         lote.append(grupo);
     }
     const campo = nombre => lote.querySelector(`[data-campo="${nombre}"]`);
+    const separador = document.createElement('h3');
+    separador.className = 'col-12 lote-separador-venta';
+    separador.textContent = 'PRECIOS PARA VENTA FINAL';
+    campo('precio_venta').parentElement.before(separador);
+    campo('precio').parentElement.className = 'col-12 col-md-6';
+    for (const nombres of [['fecha_fabricacion', 'fecha_vencimiento']]) {
+        const fila = document.createElement('div');
+        fila.className = 'col-12';
+        const columnas = document.createElement('div');
+        columnas.className = 'row g-3';
+        campo(nombres[0]).parentElement.before(fila);
+        for (const nombre of nombres) columnas.append(campo(nombre).parentElement);
+        fila.append(columnas);
+    }
     const stock = document.createElement('p'); stock.className = 'col-12 text-secondary';
-    const total = document.createElement('p'); total.className = 'col-12 fw-semibold'; total.dataset.totalLote = '';
+    const total = document.createElement('p'); total.className = 'col-12 lote-total-compra'; total.dataset.totalLote = '';
+    const unidadesTotal = document.createElement('p'); unidadesTotal.className = 'col-12 text-secondary'; unidadesTotal.dataset.unidadesLote = '';
     total.textContent = 'Precio de compra total: L 0.00';
     const notaPrecios = document.createElement('p'); notaPrecios.className = 'col-12 text-secondary';
     notaPrecios.textContent = 'Completá los precios de las presentaciones que venderás; para cajas, ingresá al menos uno.';
-    lote.append(stock, total, notaPrecios);
+    lote.append(stock, unidadesTotal, total, notaPrecios);
     const ajustarEmpaque = () => {
         const caja = campo('presentacion_ingreso').value === 'Caja';
-        const blister = campo('contenido_caja').value === 'Blister';
-        const contenido = Boolean(campo('contenido_caja').value);
+        const sueros = campo('presentacion_ingreso').value === 'Sueros por caja';
+        campo('contenido_caja').value = caja ? 'Blister' : sueros ? 'Suero' : '';
+        campo('contenido_caja').parentElement.hidden = true;
+        campo('contenido_caja').disabled = !caja && !sueros;
+        campo('contenido_caja').required = false;
         for (const nombre of ['contenido_caja', 'paquetes_por_caja', 'unidades_por_blister', 'precio_venta_contenido', 'precio_venta_unidad']) {
-            const visible = caja && (nombre === 'contenido_caja' || contenido) && (!['unidades_por_blister', 'precio_venta_unidad'].includes(nombre) || blister);
+            if (nombre === 'contenido_caja') continue;
+            const visible = nombre === 'paquetes_por_caja' ? caja || sueros
+                : nombre === 'precio_venta_contenido' ? caja || sueros : caja;
             campo(nombre).parentElement.hidden = !visible;
             campo(nombre).disabled = !visible;
             campo(nombre).required = visible && !nombre.startsWith('precio_venta');
         }
-        campo('precio_venta').required = !caja;
-        campo('precio_venta').previousElementSibling.textContent = caja ? 'Precio de venta de la caja completa (L)' : 'Precio de venta unitario (L)';
+        campo('precio_venta').required = !caja && !sueros;
+        campo('precio_venta').previousElementSibling.textContent = caja || sueros ? 'Precio de venta por caja (L)' : 'Precio de venta unitario (L)';
+        campo('precio').previousElementSibling.textContent = caja ? 'Precio de compra de la caja contenedora (L)' : sueros ? 'Precio de compra de la caja (L)' : 'Precio de compra unitario (L)';
         campo('precio_venta_unidad').previousElementSibling.textContent = 'Precio de venta por pastilla (L)';
-        campo('paquetes_por_caja').previousElementSibling.textContent = blister ? 'Blísteres por caja' : 'Sobres por caja';
-        campo('precio_venta_contenido').previousElementSibling.textContent = blister ? 'Precio de venta por blíster (L)' : 'Precio de venta por sobre (L)';
-        campo('cantidad').previousElementSibling.textContent = caja ? 'Cantidad de cajas a ingresar' : 'Cantidad de empaques a ingresar';
+        campo('paquetes_por_caja').previousElementSibling.textContent = caja ? 'Cantidad de blísteres por caja' : 'Cantidad de sueros por caja';
+        campo('precio_venta_contenido').previousElementSibling.textContent = caja ? 'Precio de venta por blíster (L)' : 'Precio de venta unitario (L)';
+        campo('cantidad').previousElementSibling.textContent = caja
+            ? 'Cantidad de cajas contenedoras' : sueros ? 'Cantidad de cajas'
+            : (['Frasco', 'Suero', 'Ampolla'].includes(campo('presentacion_ingreso').value) ? 'Cantidad de unidades' : 'Cantidad de empaques a ingresar');
+        unidadesTotal.hidden = !caja && !sueros;
+        if (lote.isConnected) actualizarTotales();
     };
     campo('presentacion_ingreso').addEventListener('change', ajustarEmpaque);
     campo('contenido_caja').addEventListener('change', ajustarEmpaque);
@@ -100,7 +133,7 @@ function agregarLote() {
         campo('laboratorio').value = form.elements.id_distribuidor.value.trim();
         stock.textContent = medicamento ? `Stock actual: ${medicamento.stock_total || 0} unidades` : '';
         campo('precio_venta').value = Number(medicamento?.precio_venta) > 0 ? medicamento.precio_venta : '';
-        campo('presentacion_ingreso').value = ['Caja', 'Frasco', 'Ampolla', 'Suero'].includes(medicamento?.forma_venta) ? medicamento.forma_venta : '';
+        campo('presentacion_ingreso').value = ['Caja', 'Frasco', 'Ampolla', 'Suero', 'Sueros por caja'].includes(medicamento?.forma_venta) ? medicamento.forma_venta : '';
         for (const nombre of ['contenido_caja', 'paquetes_por_caja', 'unidades_por_blister', 'precio_venta_contenido', 'precio_venta_unidad']) campo(nombre).value = '';
         ajustarEmpaque();
         actualizarLaboratorios();
@@ -110,7 +143,7 @@ function agregarLote() {
     const quitar = document.createElement('button');
     quitar.type = 'button';
     quitar.className = 'btn btn-outline-danger col-auto';
-    quitar.textContent = 'Quitar lote';
+    quitar.textContent = 'Cancelar lote';
     quitar.addEventListener('click', () => { lote.remove(); actualizarTotales(); actualizarLaboratorios(); });
     lote.append(quitar);
     const detalle = document.createElement('div');
@@ -136,7 +169,7 @@ function agregarLote() {
     guardarLote.dataset.guardarLote = '';
     guardarLote.addEventListener('click', () => {
         if (![...detalle.querySelectorAll('[data-campo]')].every(input => input.reportValidity())) return;
-        if (campo('presentacion_ingreso').value === 'Caja' &&
+        if (['Caja', 'Sueros por caja'].includes(campo('presentacion_ingreso').value) &&
             !['precio_venta', 'precio_venta_contenido', 'precio_venta_unidad'].some(nombre => !campo(nombre).disabled && Number(campo(nombre).value) > 0)) {
             mensaje('Ingresá al menos un precio de venta para la caja.', true);
             campo('precio_venta').focus();
@@ -303,26 +336,56 @@ function limpiarFormulario() {
     siguienteLote = 0;
     const hoy = new Date();
     const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-    form.elements.numero_factura.value = 'Se asigna al guardar';
-    form.elements.id_usuario.value = usuario.id_usuario;
+    document.getElementById('numero_factura').textContent = siguienteFactura;
+    document.getElementById('id_usuario').textContent = [usuario.nombre, usuario.apellido].filter(Boolean).join(' ');
     form.elements.fecha_compra.value = fecha;
     form.elements.fecha_compra.max = fecha;
     actualizarTotales();
 }
 function crearFormulario(config, proveedores) {
     form.replaceChildren();
+    const encabezado = document.getElementById('comprasEncabezado');
+    encabezado.replaceChildren();
+    const resumen = document.getElementById('comprasResumen');
+    resumen.replaceChildren();
     for (const campo of config.fields) {
         const grupo = document.createElement('div');
         grupo.className = 'col-12 col-md-6';
+        const esEncabezado = ['numero_factura', 'id_usuario', 'id_distribuidor', 'fecha_compra'].includes(campo.name);
+        if (esEncabezado) grupo.className = 'compras-encabezado-campo';
+        if (['numero_factura', 'id_usuario'].includes(campo.name)) {
+            const etiqueta = document.createElement('span');
+            etiqueta.className = 'form-label';
+            etiqueta.textContent = campo.name === 'numero_factura' ? 'Número de factura' : 'Usuario que atiende';
+            const texto = document.createElement('p');
+            texto.id = campo.name;
+            texto.className = 'compras-dato-lectura';
+            texto.setAttribute('aria-live', 'polite');
+            grupo.append(etiqueta, texto);
+            encabezado.append(grupo);
+            continue;
+        }
+        const esContacto = ['telefono_distribuidor', 'correo_distribuidor'].includes(campo.name);
+        const esProveedor = campo.name === 'id_distribuidor';
+        const esResumen = ['total', 'metodo_pago', 'estado'].includes(campo.name);
+        if (esResumen) {
+            grupo.className = 'compras-resumen-tarjeta compras-encabezado-campo';
+            grupo.dataset.resumen = campo.name;
+        }
         const label = document.createElement('label');
         label.textContent = campo.label;
         label.htmlFor = campo.name;
         label.className = 'form-label';
-        const input = document.createElement(campo.type === 'select' ? 'select' : 'input');
+        const input = document.createElement(campo.type === 'select' || esProveedor ? 'select' : 'input');
         input.id = input.name = campo.name;
-        input.className = 'form-control';
+        input.setAttribute('form', 'recordForm');
+        input.className = campo.type === 'select' ? 'form-select' : 'form-control';
         input.required = Boolean(campo.required);
-        if (campo.type === 'select') {
+        if (esProveedor) {
+            input.className = 'form-select';
+            input.add(new Option('Seleccioná un laboratorio o proveedor', ''));
+            for (const proveedor of proveedores) input.add(new Option(proveedor.nombre, proveedor.nombre));
+        } else if (campo.type === 'select') {
             for (const opcion of campo.options) input.add(new Option(opcion, opcion));
         } else {
             input.type = campo.type === 'distributor-name' ? 'text' : campo.type || 'text';
@@ -333,8 +396,9 @@ function crearFormulario(config, proveedores) {
             if (campo.exactLength) input.minLength = input.maxLength = campo.exactLength;
         }
         grupo.append(label, input);
-        if (campo.type === 'hidden') grupo.hidden = true;
-        form.append(grupo);
+        if (esContacto) input.type = 'hidden';
+        if (campo.type === 'hidden' || esContacto) grupo.hidden = true;
+        (esEncabezado ? encabezado : esResumen ? resumen : form).append(grupo);
         if (campo.name === 'fecha_compra') {
             const seccion = document.createElement('div');
             seccion.className = 'col-12';
@@ -343,33 +407,31 @@ function crearFormulario(config, proveedores) {
             const agregar = document.createElement('button');
             agregar.type = 'button';
             agregar.className = 'btn btn-outline-success';
-            agregar.textContent = '+ Añadir otro lote';
+            agregar.textContent = '+ Añadir lote';
             agregar.addEventListener('click', agregarLote);
             seccion.append(lotes, agregar);
             form.append(seccion);
         }
     }
-    const lista = document.createElement('datalist');
-    lista.id = 'proveedores';
-    for (const proveedor of proveedores) {
-        const opcion = document.createElement('option');
-        opcion.value = proveedor.nombre;
-        lista.append(opcion);
+    // Agrupa el cierre de la compra en el panel lateral de pagos.
+    for (const nombre of ['metodo_pago', 'estado', 'total']) {
+        resumen.append(resumen.querySelector(`[data-resumen="${nombre}"]`));
     }
-    form.append(lista);
-    form.elements.id_distribuidor.setAttribute('list', lista.id);
-    form.elements.id_distribuidor.addEventListener('input', () => {
+    const seleccionarProveedor = () => {
         actualizarLaboratorios();
         const nombre = form.elements.id_distribuidor.value.trim().toLowerCase();
         const proveedor = proveedores.find(p => p.nombre.toLowerCase() === nombre);
         form.elements.telefono_distribuidor.value = proveedor?.telefono || '';
         form.elements.correo_distribuidor.value = proveedor?.correo || '';
-    });
+    };
+    form.elements.id_distribuidor.addEventListener('input', seleccionarProveedor);
+    form.elements.id_distribuidor.addEventListener('change', seleccionarProveedor);
     form.elements.telefono_distribuidor.addEventListener('input', (e) => {
         const n = e.target.value.replace(/\D/g, '').slice(0, 8);
         e.target.value = n.length > 4 ? `${n.slice(0, 4)}-${n.slice(4)}` : n;
     });
     limpiarFormulario();
+    configurarProveedores(proveedores);
 }
 function tabla(id, columnas, filas, accion) {
     const contenedor = document.getElementById(id);
@@ -424,6 +486,9 @@ async function verLotes(compra) {
 async function cargar() {
     const datos = await solicitar(window.farmacia.cargarCompras());
     catalogoMedicamentos = datos.medicamentos;
+    // Una ventana recargada puede seguir conectada al servicio anterior de Electron.
+    // Conserva el correlativo visible también cuando esa respuesta aún no incluye la secuencia.
+    siguienteFactura = datos.siguienteFactura || `FAC#${Math.max(0, ...datos.compras.map(compra => Number(compra.id_compra) || 0)) + 1}`;
     crearFormulario(datos.config, datos.proveedores);
     tabla('tableContainer', datos.config.fields.filter(c => !c.virtual && c.showInTable !== false)
         .map(c => [c.displayName || c.name, c.label]), datos.compras, verLotes);

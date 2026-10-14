@@ -57,6 +57,48 @@ test('Todos los scripts locales referenciados por HTML existen y compilan', () =
         }
     }
 });
+
+test('Proveedor recorre preload, IPC Main y servicio al guardar', async () => {
+    const canales = new Map();
+    const escrituras = [];
+    const db = {
+        execute: async (sql, args) => {
+            if (sql.startsWith('SELECT')) return [[{ id_usuario: 1 }]];
+            escrituras.push({ sql, args }); return [{ insertId: 17 }];
+        },
+        query: async () => [[]],
+    };
+    const electron = { ipcMain: { handle: (canal, fn) => canales.set(canal, fn) }, app: { whenReady: () => ({ then() {} }), on() {} } };
+    vm.runInNewContext(fs.readFileSync('main.js', 'utf8'), {
+        require: nombre => nombre === 'electron' ? electron : nombre === './database' ? db
+            : nombre === './auth' ? { autenticar: async () => ({ id_usuario: 1 }) } : require(nombre),
+        console, __dirname, process,
+    });
+    let api;
+    vm.runInNewContext(fs.readFileSync('puente.js', 'utf8'), {
+        require: () => ({ contextBridge: { exposeInMainWorld: (_nombre, valor) => { api = valor; } },
+            ipcRenderer: { invoke: async (canal, datos) => {
+                assert(canales.has(canal), `Falta handler ${canal}`);
+                return canales.get(canal)({}, datos);
+            } },
+        }),
+    });
+    await api.iniciarSesion('prueba', 'clave');
+    const respuesta = await api.guardarProveedor({ nombre: 'Proveedor IPC', telefono: '9999-9999', correo: 'ipc@example.com' });
+    assert.equal(respuesta.datos.id_distribuidor, 17);
+    assert.equal(escrituras[0].args[0], 'Proveedor IPC');
+    await api.listarProveedores();
+});
+
+test('Preload explica cómo recuperar una instancia con handlers antiguos', async () => {
+    let api;
+    vm.runInNewContext(fs.readFileSync('puente.js', 'utf8'), {
+        require: () => ({ contextBridge: { exposeInMainWorld: (_nombre, valor) => { api = valor; } },
+            ipcRenderer: { invoke: async () => { throw new Error("No handler registered for 'proveedores:guardar'"); } },
+        }),
+    });
+    assert.match((await api.guardarProveedor({})).error, /npm start/);
+});
 test('Ventas y Medicamentos rechazan sesiones inexistentes o desactivadas', async () => {
     const db = { execute: async () => [[]] };
     for (const servicio of [ventas, medicamentos]) {
