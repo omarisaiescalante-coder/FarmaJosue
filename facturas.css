@@ -1,8 +1,83 @@
+#factura-detalle {
+    display: grid;
+    place-items: center;
+}
+
+#factura-documento {
+    width: min(100%, 540px);
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    padding: 1.5rem 1.25rem;
+    color: #1b1b1b;
+    font-family: "Segoe UI", sans-serif;
+    line-height: 1.5;
+}
+
+#factura-documento h1,
+#factura-documento h2,
+#factura-documento p {
+    margin: 0 0 0.5rem;
+}
+
+#factura-documento h1 {
+    font-size: 1.8rem;
+    text-align: center;
+}
+
+#factura-documento h2 {
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.factura-cabecera {
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed #bdbdbd;
+    margin-bottom: 1rem;
+}
+
+.factura-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75rem 0 1rem;
+}
+
+.factura-tabla th,
+.factura-tabla td {
+    border-bottom: 1px solid #e8e8e8;
+    padding: 0.5rem 0.35rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.factura-tabla th {
+    background: #f7f7f7;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.factura-resumen {
+    border-top: 1px dashed #bdbdbd;
+    padding-top: 0.8rem;
+    text-align: right;
+}
+
+.factura-resumen p {
+    margin-bottom: 0.25rem;
+}
+
 @media print {
     .cabecera, .controles-facturas, #facturas-mensaje, #imprimir { display: none !important; }
     body { background: white; color: black; }
     .contenido { max-width: none; margin: 0; padding: 0; }
     #factura-detalle { border: none; box-shadow: none; }
+    #factura-documento {
+        width: 100%;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
     table { width: 100%; }
     tr { break-inside: avoid; }
 }
