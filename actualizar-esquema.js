@@ -53,6 +53,18 @@ async function actualizar(db, { respaldo = true } = {}) {
         const [existe] = await db.execute('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND LOWER(TABLE_NAME) = ? AND COLUMN_NAME = ?', ['ventas', nombre]);
         if (!existe.length) await db.query(`ALTER TABLE ventas ADD COLUMN ${nombre} ${tipo}`);
     }
+
+        // Campos nuevos de ventas: descuento, ISV y pago en efectivo.
+    for (const [tabla, nombre, tipo] of [
+        ['ventas', 'descuento', 'DECIMAL(10, 2) DEFAULT 0'], ['ventas', 'impuesto', 'DECIMAL(10, 2) DEFAULT 0'],
+        ['ventas', 'monto_recibido', 'DECIMAL(10, 2) NULL'], ['ventas', 'cambio', 'DECIMAL(10, 2) DEFAULT 0'],
+        ['detalles_venta', 'descuento', 'DECIMAL(10, 2) DEFAULT 0'],
+        ['medicamentos', 'aplica_isv', 'BOOLEAN NOT NULL DEFAULT 1'],
+    ]) {
+        const [existe] = await db.execute('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND LOWER(TABLE_NAME) = ? AND COLUMN_NAME = ?', [tabla, nombre]);
+        if (!existe.length) await db.query(`ALTER TABLE ${tabla} ADD COLUMN ${nombre} ${tipo}`);
+    }
+    
     const [claves] = await db.query("SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND LOWER(TABLE_NAME) = 'ventas' AND COLUMN_NAME = 'id_cliente' AND REFERENCED_TABLE_NAME IS NOT NULL");
     if (!claves.length) await db.query('ALTER TABLE ventas ADD FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)');
     console.log('Esquema actualizado sin eliminar registros.');
