@@ -6,11 +6,12 @@
 <title>Facturas | Farmacia Josué</title>
 <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="facturas.css">
 <script src="facturas-ui.js" defer></script>
+    <script src="navegacion.js" defer></script>
 </head>
-<body>
+<body data-module="facturas">
 <header class="cabecera"><a href="index.html" class="nombre"><img class="logo-marca" src="assets/logo-farmajosue.png" alt=""> Farmacia Josué</a><span id="sesion-nombre"></span><button id="salir" type="button">Cerrar sesión</button></header>
 <main class="contenido">
-<button id="volver-inicio" class="controles-facturas" type="button">← Volver al inicio</button>
+
 <p id="facturas-mensaje" role="status" aria-live="polite">Verificando sesión...</p>
 <section id="pagina-facturas" hidden>
 <div class="controles-facturas"><a href="ventas.html">Registrar una venta</a><h1>Facturas de venta</h1>

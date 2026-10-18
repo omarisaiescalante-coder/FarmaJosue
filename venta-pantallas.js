@@ -67,7 +67,7 @@ function cambiarCantidad(id, delta) {
     carrito.set(id, {
         id_presentacion: id, id_medicamento: med.id_medicamento, nombre: med.nombre, restriccion: med.restriccion,
         presentacion: etiqueta(pres), precioCentavos: Math.round(Number(pres.precio_venta) * 100),
-        unidades_stock: unidadesStock, aplicaIsv: Boolean(med.aplica_isv), cantidad: nueva,
+        unidades_stock: unidadesStock, aplicaIsv: Number(med.aplica_isv) === 1, cantidad: nueva,
     });
     actualizarVenta();
 }
@@ -254,7 +254,6 @@ async function iniciarCatalogo() {
     actualizarVenta();
 }
 
-$('backButton').addEventListener('click', () => { window.location.href = 'index.html'; });
 $('logoutButton').addEventListener('click', async () => {
     try { await window.farmacia.cerrarSesion(); window.location.href = 'index.html'; }
     catch (error) { mostrarMensaje(error.message); }

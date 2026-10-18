@@ -37,3 +37,41 @@
         const e = Number(edad);
         if (e >= EDAD_CUARTA) return DESCUENTO_CUARTA;
         if (e >= EDAD_TERCERA) return DESCUENTO_TERCERA;
+        return 0;
+    }
+
+    function nombreDescuento(porcentaje) {
+        if (porcentaje === DESCUENTO_CUARTA) return 'cuarta edad';
+        if (porcentaje === DESCUENTO_TERCERA) return 'tercera edad';
+        return '';
+    }
+
+    function calcularVenta(lineas, edad) {
+        const porcentaje = porcentajeDescuento(edad);
+        let subtotal = 0, descuento = 0, isv = 0;
+        for (const linea of lineas) {
+            if (!Number.isSafeInteger(linea.precio) || linea.precio < 0 ||
+                !Number.isSafeInteger(linea.cantidad) || linea.cantidad < 1) {
+                throw new Error('Precio o cantidad inválida.');
+            }
+            const importe = linea.precio * linea.cantidad;
+            const rebaja = Math.round(importe * porcentaje / 100);
+            subtotal += importe;
+            descuento += rebaja;
+            isv += linea.aplicaIsv ? Math.round((importe - rebaja) * TASA_ISV / 100) : 0;
+            if (![subtotal, descuento, isv, subtotal - descuento + isv].every(Number.isSafeInteger)) {
+                throw new Error('El total excede el máximo permitido.');
+            }
+        }
+        return { subtotal, descuento, isv, total: subtotal - descuento + isv, porcentajeDescuento: porcentaje };
+    }
+
+    function calcularCambio(total, recibido) {
+        if (![total, recibido].every(n => Number.isSafeInteger(n) && n >= 0)) {
+            throw new Error('Importe de pago inválido.');
+        }
+        return { suficiente: recibido >= total, cambio: Math.max(0, recibido - total), faltante: Math.max(0, total - recibido) };
+    }
+
+    return { TASA_ISV, formatearDni, dniValido, edadDesdeDni, porcentajeDescuento, nombreDescuento, calcularVenta, calcularCambio };
+});

@@ -12,7 +12,7 @@ app.whenReady().then(async () => {
             document.getElementById('comprasEncabezado').innerHTML = '<div style="height:600px">Información completa</div>';
         `);
         let anchoAnterior = Infinity;
-        for (const ancho of [1280, 1000, 720]) {
+        for (const ancho of [1920, 1280, 1000, 720]) {
             ventana.setContentSize(ancho, 560);
             await new Promise(resolve => setTimeout(resolve, 60));
             const resultado = await ventana.webContents.executeJavaScript(`(() => {
@@ -31,7 +31,9 @@ app.whenReady().then(async () => {
                     necesitaScroll: area.scrollWidth > area.clientWidth, alto: centro.height };
             })()`);
             if (resultado.izquierda !== 260 || resultado.derecha !== 260 || !resultado.alturaIgual || !resultado.fila) throw new Error('Los paneles laterales se deforman: ' + JSON.stringify(resultado));
-            if (resultado.centro !== 500 || !resultado.scrollInterno || !resultado.sinScrollLateral || !resultado.informacionCompleta) throw new Error('Anchos o desplazamiento incorrectos: ' + JSON.stringify(resultado));
+            if (resultado.centro < 500 || !resultado.scrollInterno || !resultado.sinScrollLateral || !resultado.informacionCompleta) throw new Error('Anchos o desplazamiento incorrectos: ' + JSON.stringify(resultado));
+            if (ancho >= 1280 && (resultado.necesitaScroll || resultado.centro <= 500)) throw new Error('El formulario no aprovecha el ancho de la pantalla: ' + JSON.stringify(resultado));
+            if (resultado.centro > anchoAnterior) throw new Error('El formulario no se adapta al reducir la ventana');
             if (ancho === 720 && !resultado.necesitaScroll) throw new Error('Falta desplazamiento horizontal en ventana pequeña');
             anchoAnterior = resultado.centro;
         }

@@ -1,6 +1,5 @@
 const $ = id => document.getElementById(id);
 const setText = (id, valor) => { const elemento = $(id); if (elemento) elemento.textContent = valor; };
-$('volver-inicio').addEventListener('click', () => { window.location.href = 'index.html'; });
 const escapar = valor => String(valor ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dinero = valor => 'L. ' + Number(valor || 0).toFixed(2);
 let ventas = [];
@@ -31,8 +30,10 @@ async function mostrarFactura(id) {
         </table>
         <div class="factura-resumen">
             <p>Subtotal: ${dinero(venta.subtotal)}</p>
+            <p>Descuento: ${dinero(venta.descuento)}</p>
             <p>Impuesto: ${dinero(venta.impuesto || 0)}</p>
             <p>Total: ${dinero(venta.total)}</p>
+            ${venta.metodo_pago === 'Efectivo' ? `<p>Recibido: ${dinero(venta.monto_recibido)}</p><p>Cambio: ${dinero(venta.cambio)}</p>` : ''}
         </div>`;
     $('factura-detalle').hidden = false;
 }

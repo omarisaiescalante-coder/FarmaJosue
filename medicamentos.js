@@ -1,5 +1,4 @@
 const $ = id => document.getElementById(id);
-$('volver-inicio').addEventListener('click', () => { window.location.href = 'index.html'; });
 const escapar = valor => String(valor ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let catalogo = [];
 function mensaje(texto) { $('medicamentos-mensaje').textContent = texto; }

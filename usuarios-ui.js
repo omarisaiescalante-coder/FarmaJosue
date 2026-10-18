@@ -127,10 +127,6 @@ async function cargarUsuarios() {
     }
 }
 
-// Regresa al panel conservando la sesión del proceso principal.
-document.getElementById('volver-inicio').addEventListener('click', () => {
-    window.location.href = 'index.html';
-});
 // Cancela la edición y limpia los campos.
 document.getElementById('cancelar-usuario').addEventListener('click', limpiarUsuario);
 // Actualiza el filtro a medida que se escribe.

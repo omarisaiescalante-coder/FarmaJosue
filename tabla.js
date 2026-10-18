@@ -520,7 +520,6 @@ form.addEventListener('submit', async (evento) => {
     }
 });
 limpiar.addEventListener('click', limpiarFormulario);
-document.getElementById('backButton').addEventListener('click', () => { window.location.href = 'index.html'; });
 document.getElementById('logoutButton').addEventListener('click', async () => {
     try {
         await window.farmacia.cerrarSesion();

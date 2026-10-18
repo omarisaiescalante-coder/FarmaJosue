@@ -14,8 +14,9 @@
         <link rel="stylesheet" href="styles.css" />
         <!-- Carga la lógica de esta pantalla después de leer el HTML. -->
         <script src="usuarios-ui.js" defer></script>
-    </head>
-    <body>
+        <script src="navegacion.js" defer></script>
+</head>
+    <body data-module="usuarios">
         <!-- Contenido oculto hasta que usuarios-ui.js verifica la sesión y el rol. -->
         <div id="pagina-usuarios" hidden>
             <!-- Cabecera con acceso al inicio, nombre del usuario y cierre de sesión. -->
@@ -35,7 +36,7 @@
             <main class="contenido">
                 <!-- Módulo de usuarios: navegación, formulario y tabla de registros. -->
                 <section id="usuarios-vista" aria-labelledby="usuarios-titulo">
-                    <button id="volver-inicio" type="button">← Volver al inicio</button>
+                    
                     <h1 id="usuarios-titulo" tabindex="-1">Usuarios</h1>
                     <p class="subtitulo">
                         Registrá usuarios y actualizá sus datos, rol o estado.

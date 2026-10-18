@@ -47,6 +47,7 @@ CREATE TABLE clientes (
 -- MEDICAMENTOS
 CREATE TABLE medicamentos (
   id_medicamento INT AUTO_INCREMENT PRIMARY KEY,
+  aplica_isv BOOLEAN NOT NULL DEFAULT 1,
   codigo VARCHAR(20) UNIQUE NOT NULL,
   nombre VARCHAR(150) UNIQUE NOT NULL,
   categoria VARCHAR(100),
