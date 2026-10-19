@@ -3,7 +3,7 @@ const form = document.getElementById('recordForm');
 const guardar = document.getElementById('saveButton');
 const limpiar = document.getElementById('clearButton');
 let usuario;
-let versionLotes = 0;
+let comprasRegistradas = [];
 let catalogoMedicamentos = [];
 let siguienteLote = 0;
 let siguienteFactura;
@@ -433,65 +433,25 @@ function crearFormulario(config, proveedores) {
     limpiarFormulario();
     configurarProveedores(proveedores);
 }
-function tabla(id, columnas, filas, accion) {
-    const contenedor = document.getElementById(id);
-    contenedor.replaceChildren();
-    if (!filas.length) { contenedor.textContent = 'No hay registros asociados.'; return; }
-    const elemento = document.createElement('table');
-    elemento.className = 'table table-striped align-middle';
-    const encabezado = elemento.createTHead().insertRow();
-    for (const titulo of [...columnas.map(c => c[1]), ...(accion ? ['Lotes'] : [])]) {
-        const celda = document.createElement('th');
-        celda.scope = 'col';
-        celda.textContent = titulo;
-        encabezado.append(celda);
-    }
-    const cuerpo = elemento.createTBody();
-    for (const registro of filas) {
-        const fila = cuerpo.insertRow();
-        for (const [campo] of columnas) fila.insertCell().textContent = registro[campo] ?? '';
-        if (accion) {
-            const boton = document.createElement('button');
-            boton.type = 'button';
-            boton.className = 'btn btn-outline-success';
-            boton.textContent = 'Ver lotes';
-            boton.addEventListener('click', () => accion(registro));
-            fila.insertCell().append(boton);
-        }
-    }
-    contenedor.append(elemento);
-}
+// El modal reutiliza la consulta autorizada de Compras.
 async function verLotes(compra) {
-    const version = ++versionLotes;
-    document.getElementById('lotesSection').hidden = false;
-    document.getElementById('lotesTitle').textContent = `Lotes de ${compra.numero_factura}`;
-    const contenedor = document.getElementById('lotesContainer');
-    contenedor.textContent = 'Cargando lotes...';
-    try {
-        const filas = await solicitar(window.farmacia.listarLotesCompra(compra.id_compra));
-        if (version !== versionLotes) return;
-        tabla('lotesContainer', [
-            ['numero_lote', 'Lote'], ['medicamento', 'Medicamento'],
-            ['presentacion_ingreso', 'Empaque'],
-            ['contenido_caja', 'Contenido de caja'], ['paquetes_por_caja', 'Blísteres/sobres por caja'],
-            ['unidades_por_blister', 'Unidades por blíster'], ['cantidad_empaques', 'Empaques recibidos'],
-            ['precio_empaque', 'Compra por empaque (L)'], ['precio_venta', 'Venta por empaque (L)'],
-            ['precio_venta_contenido', 'Venta por blíster/sobre (L)'], ['precio_venta_unidad', 'Venta por unidad (L)'],
-            ['cantidad_inicial', 'Cantidad inicial'], ['cantidad_disponible', 'Disponible'],
-            ['fecha_fabricacion', 'Fabricación'], ['fecha_vencimiento', 'Vencimiento'],
-            ['precio_compra', 'Costo unitario (L)'], ['costo_total', 'Costo total (L)'], ['estado', 'Estado'],
-        ], filas);
-    } catch (error) { if (version === versionLotes) contenedor.textContent = error.message; }
+    // Una compra puede contener varios lotes: se pasa su ID para mostrar todos sus lotes.
+    return window.inventarioLotes.abrir([compra], `Lotes de ${compra.numero_factura}`, { isModalMode: true, compraId: compra.id_compra, expandir: true });
 }
+document.getElementById('verLotesRegistrados')?.addEventListener('click', () => {
+    window.inventarioLotes.abrir(comprasRegistradas, 'Inventario de Lotes', { isModalMode: false });
+});
 async function cargar() {
     const datos = await solicitar(window.farmacia.cargarCompras());
     catalogoMedicamentos = datos.medicamentos;
+    comprasRegistradas = datos.compras;
+    window.inventarioCompras?.actualizar(datos.compras, verLotes);
+    const accesoLotes = document.getElementById('verLotesRegistrados');
+    if (accesoLotes) accesoLotes.disabled = false;
     // Una ventana recargada puede seguir conectada al servicio anterior de Electron.
     // Conserva el correlativo visible también cuando esa respuesta aún no incluye la secuencia.
     siguienteFactura = datos.siguienteFactura || `FAC#${Math.max(0, ...datos.compras.map(compra => Number(compra.id_compra) || 0)) + 1}`;
     crearFormulario(datos.config, datos.proveedores);
-    tabla('tableContainer', datos.config.fields.filter(c => !c.virtual && c.showInTable !== false)
-        .map(c => [c.displayName || c.name, c.label]), datos.compras, verLotes);
 }
 form.addEventListener('submit', async (evento) => {
     evento.preventDefault();

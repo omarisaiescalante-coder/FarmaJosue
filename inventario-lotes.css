@@ -1,0 +1,39 @@
+﻿/* Modal nativo: teclado, foco y fondo bloqueado sin depender del JS de Bootstrap. */
+.inventario-lotes { width: min(1200px, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); padding: 0; border: 0; border-radius: 20px; background: #fff; color: #183c32; box-shadow: 0 24px 80px #102e3540; }
+.inventario-lotes::backdrop { background: #102c3bb3; }
+.inventario-cabecera, .inventario-pie { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; }
+.inventario-cabecera { border-bottom: 1px solid #dce8e3; }
+.inventario-cabecera h2 { margin: 0 0 .35rem; font-size: 1.4rem; }
+.inventario-cabecera p { margin: 0; color: #60786d; }
+.inventario-pie { border-top: 1px solid #dce8e3; justify-content: flex-end; }
+.inventario-contenido { padding: 1rem 1.5rem; overflow: auto; max-height: 65dvh; }
+.inventario-tabla { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.inventario-tabla th, .inventario-tabla td { padding: .9rem; text-align: left; border-bottom: 1px solid #dce8e3; }
+.inventario-tabla thead { background: #eff5f2; color: #34574a; }
+.inventario-tabla caption { caption-side: top; padding-bottom: .8rem; }
+.inventario-tabla .inventario-fila-detalle > td { padding: 0; border: 0; }
+.inventario-acordeon { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .25s ease, visibility .25s; }
+.inventario-acordeon.abierto { grid-template-rows: 1fr; visibility: visible; }
+.inventario-acordeon > div { min-height: 0; overflow: hidden; }
+.inventario-medicamentos { margin: .75rem; padding: 1rem; background: #e8f3f8; border-left: 4px solid #24799b; border-radius: 12px; }
+.inventario-medicamentos h3 { font-size: 1rem; color: #15516c; margin: 0 0 .75rem; }
+.inventario-medicamentos table { font-size: .85rem; background: white; }
+.inventario-medicamentos thead { background: #d3e8f2; color: #15516c; }
+.inventario-estado { padding: 2rem; text-align: center; }
+.inventario-existencias { margin: .75rem 0 0; color: #15516c; }
+@media (prefers-reduced-motion: reduce) { .inventario-acordeon { transition: none; } }
+@media (max-width: 600px) { .inventario-cabecera, .inventario-pie, .inventario-contenido { padding: 1rem; } .inventario-tabla { min-width: 760px; } }
+
+/* Accesos principales y contexto de la compra seleccionada. */
+.compras-barra-superior { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: .75rem; }
+.compras-barra-superior h1 { margin: 0; }
+.compras-accesos { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; margin-left: auto; }
+.inventario-tabla .inventario-lote-destacado > td { background: #dcf3e7; border-bottom-color: #90c9ac; }
+.inventario-tabla .inventario-lote-destacado > td:first-child { box-shadow: inset 4px 0 #198754; font-weight: 700; }
+#vistaInventarioCompras[hidden], #vistaRegistroCompras[hidden] { display: none !important; }
+@media (max-width: 600px) { .compras-accesos { width: 100%; } .compras-accesos button { flex: 1 1 100%; } }
+
+/* En modo página el componente ocupa el área principal, sin backdrop ni altura limitada. */
+.inventario-lotes-pagina { width: 100%; background: #fff; border-radius: 20px; box-shadow: 0 8px 28px #102e3512; }
+.inventario-lotes-pagina[hidden] { display: none !important; }
+.inventario-lotes-pagina .inventario-contenido { max-height: none; }

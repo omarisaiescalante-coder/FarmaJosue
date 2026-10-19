@@ -25,6 +25,7 @@
         .registro-medicamento::backdrop { background: #0008; }
     </style>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="inventario-lotes.css">
     <script src="navegacion.js" defer></script>
 </head> 
 
@@ -47,10 +48,17 @@
 
         </div>
 
-        <h1 id="pageTitle">Compras</h1>
+        <div class="compras-barra-superior">
+            <h1 id="pageTitle">Compras</h1>
+            <nav class="compras-accesos" aria-label="Inventarios de compras">
+                <button id="irInventarioCompras" type="button" class="btn btn-outline-success" disabled>Ir a Inventario de Compras</button>
+                <button id="verLotesRegistrados" type="button" class="btn btn-success" disabled>Inventario de Lotes</button>
+            </nav>
+        </div>
         <p id="pageDescription" class="text-secondary">Registro de compras de medicamentos a laboratorios.</p>
         <div id="message" class="alert d-none" role="alert"></div>
 
+        <div id="vistaRegistroCompras">
         <div class="compras-area-trabajo mb-4">
         <div class="compras-layout">
         <aside id="comprasEncabezado" class="compras-encabezado" aria-label="Datos de la compra"></aside>
@@ -75,17 +83,27 @@
         </div>
         </div>
 
-        <section class="card border-0 rounded-4 shadow-sm table-responsive">
-            <h2 class="h5 p-3">Compras registradas</h2>
-            <div id="tableContainer"></div>
+
+        </div>
+        <!-- Vista independiente: el formulario se conserva montado para mantener el borrador. -->
+        <section id="vistaInventarioCompras" hidden aria-labelledby="historialComprasTitulo">
+            <div class="card border-0 rounded-4 shadow-sm p-4">
+                <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+                    <div><h2 id="historialComprasTitulo" tabindex="-1">Inventario de Compras</h2>
+                    <p class="text-secondary mb-0">Historial general de compras y acceso a sus lotes.</p></div>
+                    <button id="regresarRegistroCompras" type="button" class="btn btn-outline-success">Regresar a Compras</button>
+                </div>
+                <div id="historialComprasResumen" class="mb-3" role="status"></div>
+                <div id="historialComprasTabla" class="table-responsive"></div>
+            </div>
         </section>
-        <section id="lotesSection" class="card border-0 rounded-4 shadow-sm table-responsive p-3 mt-4" hidden>
-            <h2 id="lotesTitle" class="h5">Lotes de la compra</h2>
-            <div id="lotesContainer"></div>
-        </section>
+        <!-- El componente de lotes se monta aqu? en modo p?gina, o en un dialog en modo modal. -->
+        <section id="vistaInventarioLotes" class="inventario-lotes-pagina" hidden aria-label="Inventario de Lotes"></section>
     </main>
 
     <script src="./proveedores-ui.js"></script>
+    <script src="./inventario-lotes.js"></script>
+    <script src="./inventario-compras.js"></script>
     <script src="./tabla.js"></script>
 </body>
 </html>
