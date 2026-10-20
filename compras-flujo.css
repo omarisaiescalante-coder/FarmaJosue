@@ -1,0 +1,306 @@
+/* Compras: superficie continua organizada por títulos y separadores. */
+body[data-module="compras"] main.container-fluid { max-width: 1180px; margin-inline: auto; }
+.compras-area-trabajo { overflow: visible; }
+.compras-layout { grid-template-columns: minmax(0, 1fr); min-width: 0; min-height: 0; gap: 28px; }
+.compras-layout > .compras-encabezado { overflow: visible; }
+.compras-encabezado { background: transparent; color: #243c50; border: 0; border-radius: 0; padding: 0; box-shadow: none; gap: 20px; }
+#comprasEncabezado { grid-template-columns: 1fr 1fr 1.8fr 1fr; align-items: start; }
+#comprasEncabezado::before { content: 'Información de compra'; grid-column: 1 / -1; display: block; padding-bottom: 14px; border-bottom: 1px solid #dce5e1; color: #435b50; font-size: 13px; font-weight: 650; letter-spacing: .8px; text-transform: uppercase; }
+.compras-encabezado::after { display: none; }
+.compras-encabezado-campo + .compras-encabezado-campo { border: 0; padding-top: 0; }
+.compras-encabezado .form-label, .compras-resumen-tarjeta .form-label { color: #61736e; font-size: 12px; font-weight: 600; }
+.compras-dato-lectura { color: #203d35; font-size: 16px; padding-top: 7px; }
+.compras-encabezado .form-control, .compras-encabezado .form-select { color: #243c50; color-scheme: light; background-color: #f8faf9; border: 1px solid #dce5e1; border-radius: 8px; min-height: 42px; }
+.compras-encabezado option { color: #243c50; background: white; }
+.compras-encabezado :focus-visible { outline-color: #198754; }
+.compras-encabezado .proveedores-acceso { color: #16734e; background: #f0f8f4; border-color: #d6e9de; }
+.compras-encabezado .proveedores-acceso:hover { background: #e2f2e9; }
+body[data-module="compras"] .compras-formulario { height: auto; padding: 0 !important; background: transparent; box-shadow: none !important; }
+.compras-formulario #recordForm { overflow: visible; padding: 0; scrollbar-gutter: auto; }
+.compras-formulario #recordForm > .col-12 { padding: 0; }
+.compras-seccion-titulo { margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid #dce5e1; }
+.compras-seccion-titulo h2 { font-size: 16px; font-weight: 650; margin: 0 0 6px; color: #203d35; }
+.compras-seccion-titulo p { color: #73817b; font-size: 14px; margin: 0; }
+.compra-lote { min-width: 0; margin: 0 0 24px; padding: 0 0 24px; background: transparent; border: 0; border-bottom: 1px solid #dce5e1; border-radius: 0; box-shadow: none; }
+.compra-lote legend { float: none; width: 100%; margin: 0 0 18px; }
+.lote-indicador { display: block; color: #168052; font-size: 11px; font-weight: 700; letter-spacing: .8px; margin-bottom: 5px; }
+.compra-lote legend button { font-size: 18px; font-weight: 650; text-decoration: none; }
+.compra-lote [data-detalle-lote] { margin-bottom: 0; }
+.lote-colapsado { padding: 0 0 18px; }
+.lote-colapsado legend { margin-bottom: 8px; }
+.lote-resumen { display: flex; flex-wrap: wrap; gap: 8px 26px; color: #687a71; font-size: 13px; }
+body[data-module="compras"] [data-lote] .form-label { min-height: 0; font-size: 13px; color: #4c6258; }
+body[data-module="compras"] [data-lote] .col-md-4 > .form-label { min-height: 0; }
+body[data-module="compras"] [data-lote] .form-control,
+body[data-module="compras"] [data-lote] .form-select { border: 1px solid #dce5e1; border-radius: 8px; background-color: #fff; min-height: 42px; padding: 9px 12px; }
+body[data-module="compras"] [data-lote] .form-control:focus,
+body[data-module="compras"] [data-lote] .form-select:focus { border-color: #379c71; box-shadow: 0 0 0 3px #19875416; }
+body[data-module="compras"] .lote-separador-venta { background: transparent; border: 0; border-bottom: 1px solid #dce5e1; border-radius: 0; color: #61736e; padding: 16px 8px 12px; letter-spacing: .4px; }
+body[data-module="compras"] .lote-total-compra { border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #246749; font-size: 16px; padding: 8px; }
+.compras-pagos { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.compras-pagos > h2 { grid-column: 1 / -1; color: #435b50; font-size: 13px; font-weight: 650; letter-spacing: .8px; text-transform: uppercase; padding-bottom: 14px; border-bottom: 1px solid #dce5e1; }
+.compras-pagos { padding: 0 0 12px; }
+.compras-resumen { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.compras-pagos .compras-resumen-tarjeta .form-control { max-width: 100%; }
+.compras-pagos .form-select { --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2361736e' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); }
+.compras-resumen-tarjeta [name="total"] { color: #16734e; font-size: 26px; max-width: 100%; }
+.compras-pagos .compras-guardar { background: #198754; color: white; border-color: #198754; padding: 12px 24px; border-radius: 10px; }
+.compras-formulario > .mt-3 { text-align: right; }
+@media (max-width: 850px) {
+    #comprasEncabezado { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .compras-pagos { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+    #comprasEncabezado, .compras-resumen { grid-template-columns: minmax(0, 1fr); }
+    .compra-lote { padding: 0 0 20px; }
+    .lote-resumen { flex-direction: column; }
+}
+
+/* Identidad azul y campos abiertos sobre una superficie blanca. */
+body[data-module="compras"] {
+    --azul: #143d66;
+    --azul-compras-hover: #0f3052;
+    background: #f5f6f8 !important;
+}
+body[data-module="compras"] .compras-layout {
+    --separador-compra: linear-gradient(90deg, var(--azul), #7793af 48%, #143d6600);
+}
+body[data-module="compras"] .compras-layout .form-control,
+body[data-module="compras"] .compras-layout .form-select,
+body[data-module="compras"] .compras-layout #buscarProveedor {
+    /* Trazo casi recto: solo los extremos suben 3 px; el brillo queda debajo. */
+    --linea-input-compra: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 14' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='glow' x='-10%25' y='-100%25' width='120%25' height='400%25' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='2'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M1 3 Q4 6 10 6 H390 Q396 6 399 3' fill='none' stroke='%23143d66' stroke-width='2' opacity='.24' transform='translate(0 3)' filter='url(%23glow)'/%3E%3Cpath d='M1 3 Q4 6 10 6 H390 Q396 6 399 3' fill='none' stroke='%23143d66' stroke-width='1.25' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    background-color: transparent;
+    background-image: var(--linea-input-compra);
+    background-position: left bottom;
+    background-size: 100% 14px;
+    background-repeat: no-repeat;
+    box-shadow: none;
+    color: var(--marino);
+    padding-left: 0;
+}
+body[data-module="compras"] .compras-layout .form-control:focus,
+body[data-module="compras"] .compras-layout .form-select:focus,
+body[data-module="compras"] .compras-layout #buscarProveedor:focus {
+    border-bottom-color: transparent;
+    box-shadow: 0 4px 6px -5px #143d6660;
+    outline: none;
+}
+body[data-module="compras"] #comprasEncabezado::before,
+body[data-module="compras"] .compras-seccion-titulo h2,
+body[data-module="compras"] .compras-pagos > h2,
+body[data-module="compras"] .lote-indicador,
+body[data-module="compras"] .lote-separador-venta,
+body[data-module="compras"] .lote-total-compra,
+body[data-module="compras"] .compras-dato-lectura,
+body[data-module="compras"] .compras-resumen-tarjeta [name="total"] {
+    color: var(--azul);
+}
+body[data-module="compras"] #vistaRegistroCompras .btn:not(.btn-link),
+body[data-module="compras"] .compras-accesos .btn {
+    --bs-btn-disabled-bg: var(--azul);
+    --bs-btn-disabled-border-color: var(--azul);
+    background: var(--azul);
+    border-color: var(--azul);
+    color: #fff;
+}
+body[data-module="compras"] #vistaRegistroCompras .btn:not(.btn-link):hover:not(:disabled),
+body[data-module="compras"] .compras-accesos .btn:hover:not(:disabled) {
+    background: var(--azul-compras-hover);
+    border-color: var(--azul-compras-hover);
+    color: #fff;
+}
+body[data-module="compras"] .proveedores-opciones button,
+body[data-module="compras"] .compras-layout .btn-link,
+body[data-module="compras"] .compras-layout :focus-visible {
+    color: var(--azul);
+    outline-color: var(--azul);
+}
+body[data-module="compras"] .compras-layout .text-success { color: var(--azul) !important; }
+body[data-module="compras"] .compras-layout .btn { box-shadow: none; }
+body[data-module="compras"] .compras-layout .form-select {
+    --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23143d66' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+body[data-module="compras"] .compras-layout .form-select {
+    background-image: var(--bs-form-select-bg-img), var(--linea-input-compra);
+    background-position: right .75rem center, left bottom;
+    background-size: 16px 12px, 100% 14px;
+    background-repeat: no-repeat;
+}
+body[data-module="compras"] .proveedores-flecha { color: var(--azul); }
+body[data-module="compras"] .proveedores-opciones button:hover,
+body[data-module="compras"] .proveedores-opciones button:focus { color: var(--azul); background: #143d660c; }
+body[data-module="compras"] #comprasEncabezado::before,
+body[data-module="compras"] .compras-seccion-titulo,
+body[data-module="compras"] .compra-lote,
+body[data-module="compras"] .lote-separador-venta,
+body[data-module="compras"] .compras-pagos > h2,
+body[data-module="compras"] .compras-pagos {
+    border-bottom: 0;
+    background-image: var(--separador-compra);
+    background-position: left bottom;
+    background-size: 100% 1px;
+    background-repeat: no-repeat;
+}
+
+/* Superficies ligeras separadas por espacios blancos. */
+body[data-module="compras"] main.container-fluid { max-width: none; }
+body[data-module="compras"] .compras-layout {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: stretch;
+    background: transparent;
+}
+.compras-columna-informacion { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+body[data-module="compras"] #comprasEncabezado,
+body[data-module="compras"] .compras-lotes-agregados,
+body[data-module="compras"] .compras-formulario {
+    background-color: #fff;
+    border: 0;
+    border-radius: 8px;
+    box-shadow: none;
+    padding: 28px;
+}
+body[data-module="compras"] #comprasEncabezado { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+body[data-module="compras"] #comprasEncabezado::before,
+body[data-module="compras"] .compras-seccion-titulo {
+    background-image: none;
+    border-bottom: 1px solid #dfe4e8;
+}
+body[data-module="compras"] .compras-formulario { padding: 28px !important; min-width: 0; }
+body[data-module="compras"] .compra-lote { background-image: none; border: 0; margin-bottom: 12px; padding-bottom: 0; }
+.compras-lotes-agregados { margin: 0; }
+.compras-lotes-agregados h2 { font-size: 14px; font-weight: 650; color: #143d66; margin: 0 0 14px; }
+.compras-lote-compacto { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) minmax(60px, auto); gap: 12px; padding: 12px 0; border: 0; border-bottom: 1px solid #e3e7eb; border-radius: 0; background: transparent; box-shadow: none; text-align: left; font-size: 13px; color: #344c62; }
+.compras-lote-compacto:hover { background: #edf0f3; }
+.compras-lote-fila { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #e3e7eb; }
+.compras-lote-fila .compras-lote-compacto { flex: 1; min-width: 0; border-bottom: 0; }
+body[data-module="compras"] .compras-eliminar-lote { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 32px; width: 32px; height: 34px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #7c8998; }
+body[data-module="compras"] .compras-eliminar-lote:hover { background: #fff0f0; color: #b63d48; }
+.compras-lote-compacto > span { overflow-wrap: anywhere; }
+.compras-lote-compacto > span + span { border-left: 1px solid #dfe4e8; padding-left: 12px; color: #627386; }
+.compras-lotes-vacio { font-size: 13px; color: #778491; margin: 0; }
+body[data-module="compras"] .compras-pagos { grid-column: 1 / -1; margin-top: 0; padding-top: 28px; border-top: 1px solid #dfe4e8; background-color: white; }
+@media (max-width: 1000px) {
+    body[data-module="compras"] .compras-layout { grid-template-columns: minmax(210px, 250px) minmax(0, 1fr); }
+    body[data-module="compras"] #comprasEncabezado,
+    body[data-module="compras"] .compras-lotes-agregados { padding: 18px; }
+    body[data-module="compras"] .compras-formulario { padding: 18px !important; }
+}
+@media (max-width: 760px) {
+    body[data-module="compras"] .compras-layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Etiquetas con aire y acciones más compactas. */
+body[data-module="compras"] .compras-formulario > .compras-seccion-titulo {
+    background: var(--fondo-panel-principal);
+    border: 0;
+    border-radius: 8px;
+    padding: 20px 24px;
+}
+body[data-module="compras"] .compras-seccion-titulo h2 { color: white; }
+body[data-module="compras"] .compras-seccion-titulo p { color: #d6e6ff; }
+body[data-module="compras"] .compras-pagos > h2 {
+    background: var(--fondo-panel-principal);
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    padding: 20px 24px;
+}
+body[data-module="compras"] #comprasEncabezado { background: var(--fondo-panel-principal); }
+body[data-module="compras"] #comprasEncabezado::before,
+body[data-module="compras"] #comprasEncabezado .form-label,
+body[data-module="compras"] #comprasEncabezado .compras-dato-lectura { color: white; }
+body[data-module="compras"] #comprasEncabezado::before { border-bottom-color: #ffffff35; }
+body[data-module="compras"] .compras-pagos { padding: 24px; border-radius: 8px; border-top: 0; }
+body[data-module="compras"] .compras-layout input::placeholder { text-align: center; }
+body[data-module="compras"] .medicamentos-sugerencias {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 4px 14px #143d6610;
+}
+body[data-module="compras"] .medicamentos-sugerencias button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #143d66;
+    text-align: left;
+    font-size: 13px;
+}
+body[data-module="compras"] .medicamentos-sugerencias button span { overflow-wrap: anywhere; min-width: 0; }
+body[data-module="compras"] .medicamentos-sugerencias small { color: #78879b; flex-shrink: 0; }
+body[data-module="compras"] .medicamentos-sugerencias button:hover,
+body[data-module="compras"] .medicamentos-sugerencias button[aria-selected="true"] { background: #edf2f7; }
+body[data-module="compras"] .compras-layout .form-control,
+body[data-module="compras"] .compras-layout .form-select,
+body[data-module="compras"] .compras-layout #buscarProveedor {
+    min-height: 48px;
+    padding-top: 8px;
+    padding-bottom: 17px;
+    border: 1px solid #c9d8eb;
+    border-bottom-color: #143d66;
+    border-radius: 10px;
+    background-color: #fff;
+    padding-left: 12px;
+    background-image: none;
+}
+body[data-module="compras"] .compras-layout .form-select {
+    background-image: var(--bs-form-select-bg-img);
+    background-position: right .75rem center;
+    background-size: 16px 12px;
+}
+body[data-module="compras"] .compras-layout .form-control:focus,
+body[data-module="compras"] .compras-layout .form-select:focus,
+body[data-module="compras"] .compras-layout #buscarProveedor:focus {
+    border-color: #8aa8cb;
+    border-bottom-color: #143d66;
+    box-shadow: none;
+}
+body[data-module="compras"] .compras-layout .form-label { display: block; margin-bottom: 14px; line-height: 1.5; }
+body[data-module="compras"] .compras-layout .form-select,
+body[data-module="compras"] .compras-layout #buscarProveedor { border-radius: 10px; padding-left: 12px; }
+body[data-module="compras"] #vistaRegistroCompras .btn,
+body[data-module="compras"] .compras-accesos .btn {
+    font-size: 13px;
+    padding: 7px 12px;
+    min-height: 34px;
+    line-height: 1.4;
+    border-radius: 8px;
+}
+body[data-module="compras"] .compras-encabezado .proveedores-acceso { margin-top: 16px; }
+body[data-module="compras"] #lotesNuevos + .btn { margin-top: 16px; }
+body[data-module="compras"] .proveedores-opciones { padding: 6px; border-radius: 12px; border-color: #e0e6ed; box-shadow: 0 4px 14px #143d6610; }
+body[data-module="compras"] .proveedores-opciones button { border-radius: 8px; padding: 10px 12px; }
+body[data-module="compras"] .proveedores-opciones button + button { margin-top: 4px; }
+@supports (appearance: base-select) {
+    body[data-module="compras"] .compras-layout select.form-select,
+    body[data-module="compras"] .compras-layout select.form-select::picker(select) { appearance: base-select; }
+    body[data-module="compras"] .compras-layout select.form-select::picker-icon { display: none; }
+    body[data-module="compras"] .compras-layout select.form-select::picker(select) {
+        margin-top: 6px;
+        padding: 6px;
+        border: 1px solid #e0e6ed;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 4px 14px #143d6610;
+        color: #143d66;
+    }
+    body[data-module="compras"] .compras-layout select.form-select option { padding: 9px 12px; border-radius: 8px; }
+    body[data-module="compras"] .compras-layout select.form-select option:checked,
+    body[data-module="compras"] .compras-layout select.form-select option:hover { background: #edf2f7; }
+}

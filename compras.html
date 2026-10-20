@@ -26,6 +26,7 @@
     </style>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="inventario-lotes.css">
+    <link rel="stylesheet" href="compras-flujo.css">
     <script src="navegacion.js" defer></script>
 </head> 
 
@@ -61,10 +62,16 @@
         <div id="vistaRegistroCompras">
         <div class="compras-area-trabajo mb-4">
         <div class="compras-layout">
-        <aside id="comprasEncabezado" class="compras-encabezado" aria-label="Datos de la compra"></aside>
-        <section class="compras-formulario card border-0 rounded-4 shadow-sm p-4">
+        <aside class="compras-columna-informacion">
+            <section id="comprasEncabezado" class="compras-encabezado" aria-label="Datos de la compra"></section>
+            <section class="compras-lotes-agregados" aria-labelledby="lotesAgregadosTitulo">
+                <h2 id="lotesAgregadosTitulo">Lotes agregados</h2>
+                <div id="lotesAgregados" aria-live="polite"></div>
+            </section>
+        </aside>
+        <section class="compras-formulario" aria-labelledby="comprasLotesTitulo">
+            <div class="compras-seccion-titulo"><h2 id="comprasLotesTitulo">Registro de lotes</h2><p>Medicamentos, cantidades y precios de esta compra.</p></div>
             <form id="recordForm" class="row g-3"></form>
-            <div class="mt-3">
                 <button
                     id="clearButton"
                     disabled
@@ -73,13 +80,12 @@
                 >
                     Limpiar
                 </button>
-            </div>
         </section>
-        <aside class="compras-encabezado compras-pagos" aria-labelledby="comprasPagosTitulo">
+        <section class="compras-encabezado compras-pagos" aria-labelledby="comprasPagosTitulo">
             <h2 id="comprasPagosTitulo">Resumen y métodos de pago</h2>
             <div id="comprasResumen" class="compras-resumen"></div>
             <button id="saveButton" disabled form="recordForm" class="btn btn-light compras-guardar" type="submit">Guardar compra</button>
-        </aside>
+        </section>
         </div>
         </div>
 

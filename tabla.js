@@ -7,9 +7,70 @@ let comprasRegistradas = [];
 let catalogoMedicamentos = [];
 let siguienteLote = 0;
 let siguienteFactura;
+let lotesAgregados = [];
+let loteEnEdicion = null;
+
+function datosLote(lote) {
+    return { ...Object.fromEntries([...lote.querySelectorAll('[data-campo]')]
+        .filter(input => !input.disabled && !['nombre_medicamento', 'laboratorio'].includes(input.dataset.campo))
+        .map(input => [input.dataset.campo, input.value])),
+        numero_automatico: !lote.querySelector('[data-campo="numero_lote"]').value.trim() };
+}
+
+function pintarLotesAgregados() {
+    const lista = document.getElementById('lotesAgregados');
+    if (!lista) return;
+    lista.replaceChildren();
+    if (!lotesAgregados.length) {
+        const vacio = document.createElement('p');
+        vacio.className = 'compras-lotes-vacio';
+        vacio.textContent = 'Todavía no hay lotes agregados.';
+        lista.append(vacio);
+    }
+    for (const [indice, lote] of lotesAgregados.entries()) {
+        const fila = document.createElement('button');
+        fila.type = 'button';
+        fila.className = 'compras-lote-compacto';
+        fila.setAttribute('aria-label', `Editar lote ${lote.datos.numero_lote || 'automático'} de ${lote.nombre}`);
+        fila.addEventListener('click', () => {
+            document.querySelector('[data-lote]').dispatchEvent(new CustomEvent('editar-lote', { detail: indice }));
+        });
+        const nombre = document.createElement('span');
+        nombre.textContent = lote.nombre;
+        const numero = document.createElement('span');
+        numero.textContent = lote.datos.numero_lote || 'Automático';
+        fila.append(nombre, numero);
+        const registro = document.createElement('div');
+        registro.className = 'compras-lote-fila';
+        const eliminar = document.createElement('button');
+        eliminar.type = 'button';
+        eliminar.className = 'compras-eliminar-lote';
+        eliminar.setAttribute('aria-label', `Eliminar lote ${lote.datos.numero_lote || 'automático'} de ${lote.nombre}`);
+        eliminar.title = 'Eliminar lote';
+        eliminar.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg>';
+        eliminar.addEventListener('click', () => {
+            lotesAgregados.splice(indice, 1);
+            if (loteEnEdicion === indice) {
+                document.querySelector('[data-lote]').dispatchEvent(new Event('limpiar-lote'));
+            } else if (loteEnEdicion !== null && loteEnEdicion > indice) {
+                loteEnEdicion--;
+            }
+            pintarLotesAgregados();
+            actualizarTotales();
+            const siguiente = lista.querySelector('.compras-eliminar-lote');
+            (siguiente || document.querySelector('[data-campo="nombre_medicamento"]')).focus();
+        });
+        registro.append(fila, eliminar);
+        lista.append(registro);
+    }
+}
+
+function loteActualTieneDatos(lote) {
+    return lote && [...lote.querySelectorAll('[data-campo]')].some(input => !input.disabled && input.type !== 'hidden' && input.value.trim());
+}
 
 function actualizarTotales() {
-    let total = 0;
+    let total = lotesAgregados.reduce((suma, lote, indice) => suma + (indice === loteEnEdicion ? 0 : Math.round(Number(lote.datos.precio) * 100) * Number(lote.datos.cantidad)), 0);
     for (const lote of document.querySelectorAll('[data-lote]')) {
         const cantidad = Number(lote.querySelector('[data-campo="cantidad"]').value);
         const precio = Number(lote.querySelector('[data-campo="precio"]').value);
@@ -27,14 +88,19 @@ function actualizarTotales() {
 }
 
 function agregarLote() {
+    const actual = document.querySelector('[data-lote]');
+    if (actual) { actual.querySelector('[data-campo="nombre_medicamento"]').focus(); return; }
     const lote = document.createElement('fieldset');
     lote.dataset.lote = '';
-    lote.className = 'row g-3 border rounded p-3 mb-3';
+    lote.className = 'compra-lote';
     const leyenda = document.createElement('legend');
     leyenda.className = 'h6';
     leyenda.textContent = 'Lote';
     lote.append(leyenda);
     const numero = ++siguienteLote;
+    const indicador = document.createElement('span');
+    indicador.className = 'lote-indicador';
+    indicador.textContent = `LOTE #${numero}`;
     for (const [campo, titulo, tipo] of [
         ['nombre_medicamento', 'Nombre del medicamento', 'text'], ['numero_lote', 'Número de lote', 'text'],
         ['id_medicamento', '', 'hidden'], ['laboratorio', '', 'hidden'],
@@ -140,28 +206,43 @@ function agregarLote() {
     });
     agregarRegistroMedicamento(lote, campo('id_medicamento'), campo('nombre_medicamento'));
     ajustarEmpaque();
-    const quitar = document.createElement('button');
-    quitar.type = 'button';
-    quitar.className = 'btn btn-outline-danger col-auto';
-    quitar.textContent = 'Cancelar lote';
-    quitar.addEventListener('click', () => { lote.remove(); actualizarTotales(); actualizarLaboratorios(); });
-    lote.append(quitar);
     const detalle = document.createElement('div');
     detalle.className = 'row g-3';
     detalle.id = `detalle-lote-${numero}`;
     detalle.dataset.detalleLote = '';
     detalle.append(...[...lote.children].filter(elemento => elemento !== leyenda));
-    const desplegar = document.createElement('button');
-    desplegar.type = 'button';
-    desplegar.className = 'btn btn-link text-success p-0 text-start';
-    desplegar.textContent = 'Lote';
-    desplegar.setAttribute('aria-controls', detalle.id);
-    const mostrarDetalle = visible => {
-        detalle.hidden = !visible;
-        desplegar.setAttribute('aria-expanded', String(visible));
+    leyenda.replaceChildren(indicador);
+    indicador.textContent = 'Lote actual';
+    const limpiarLoteActual = () => {
+        loteEnEdicion = null;
+        for (const input of lote.querySelectorAll('[data-campo]')) {
+            input.value = '';
+            input.setCustomValidity('');
+        }
+        campo('id_medicamento').dispatchEvent(new Event('change'));
+        actualizarTotales();
+        campo('nombre_medicamento').focus();
     };
-    desplegar.addEventListener('click', () => mostrarDetalle(detalle.hidden));
-    leyenda.replaceChildren(desplegar);
+    lote.addEventListener('limpiar-lote', limpiarLoteActual);
+    lote.addEventListener('editar-lote', evento => {
+        if (loteActualTieneDatos(lote)) {
+            mensaje('Guarda o cancela el lote actual antes de editar otro.', true);
+            return;
+        }
+        loteEnEdicion = evento.detail;
+        const seleccionado = lotesAgregados[loteEnEdicion];
+        campo('nombre_medicamento').value = seleccionado.nombre;
+        campo('id_medicamento').value = seleccionado.datos.id_medicamento;
+        campo('id_medicamento').dispatchEvent(new Event('change'));
+        campo('presentacion_ingreso').value = seleccionado.datos.presentacion_ingreso;
+        ajustarEmpaque();
+        for (const [nombre, valor] of Object.entries(seleccionado.datos)) {
+            const input = campo(nombre);
+            if (input) input.value = valor;
+        }
+        actualizarTotales();
+        campo('nombre_medicamento').focus();
+    });
     const guardarLote = document.createElement('button');
     guardarLote.type = 'button';
     guardarLote.className = 'btn btn-success col-auto';
@@ -175,15 +256,17 @@ function agregarLote() {
             campo('precio_venta').focus();
             return;
         }
-        desplegar.textContent = campo('nombre_medicamento').value.trim();
-        mostrarDetalle(false);
-        actualizarTotales();
-        desplegar.focus();
+        const agregado = { nombre: campo('nombre_medicamento').value.trim(), datos: datosLote(lote) };
+        if (loteEnEdicion === null) lotesAgregados.push(agregado);
+        else lotesAgregados[loteEnEdicion] = agregado;
+        pintarLotesAgregados();
+        limpiarLoteActual();
     });
-    lote.addEventListener('invalid', () => mostrarDetalle(true), true);
-    detalle.append(guardarLote);
+    const accionesLote = document.createElement('div');
+    accionesLote.className = 'col-12 d-flex flex-wrap gap-3 pt-2';
+    accionesLote.append(guardarLote, limpiar);
+    detalle.append(accionesLote);
     lote.append(detalle);
-    mostrarDetalle(true);
     lote.addEventListener('input', actualizarTotales);
     document.getElementById('lotesNuevos').append(lote);
     actualizarLaboratorios();
@@ -262,9 +345,70 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
     abrir.addEventListener('click', () => mostrar());
     cancelar.addEventListener('click', cerrar);
     cancelarAviso.addEventListener('click', () => { cerrar(); buscador.focus(); });
-    const lista = document.createElement('datalist'); lista.id = `${selector.id}-opciones`;
-    const llenarLista = () => lista.replaceChildren(...catalogoMedicamentos.map(m => new Option(m.codigo, m.nombre)));
-    llenarLista(); buscador.setAttribute('list', lista.id); seccion.append(lista);
+    const lista = document.createElement('div');
+    lista.id = `${selector.id}-opciones`;
+    lista.className = 'medicamentos-sugerencias';
+    lista.setAttribute('popover', 'auto');
+    lista.setAttribute('role', 'listbox');
+    buscador.setAttribute('role', 'combobox');
+    buscador.setAttribute('aria-autocomplete', 'list');
+    buscador.setAttribute('aria-controls', lista.id);
+    buscador.setAttribute('aria-expanded', 'false');
+    let opcionActiva = -1;
+    const cerrarSugerencias = () => {
+        if (lista.matches(':popover-open')) lista.hidePopover();
+        buscador.setAttribute('aria-expanded', 'false');
+        buscador.removeAttribute('aria-activedescendant');
+        opcionActiva = -1;
+    };
+    const elegir = medicamento => {
+        buscador.value = medicamento.nombre;
+        buscar();
+        cerrarSugerencias();
+        buscador.focus();
+    };
+    const sugerir = () => {
+        lista.replaceChildren();
+        opcionActiva = -1;
+        buscador.removeAttribute('aria-activedescendant');
+        const texto = buscador.value.trim().toLocaleLowerCase('es');
+        const coincidencias = texto ? catalogoMedicamentos.filter(m =>
+            `${m.nombre} ${m.codigo}`.toLocaleLowerCase('es').includes(texto)).slice(0, 30) : [];
+        if (!coincidencias.length) { cerrarSugerencias(); return; }
+        for (const [indice, medicamento] of coincidencias.entries()) {
+            const opcion = document.createElement('button');
+            opcion.type = 'button';
+            opcion.id = `${lista.id}-${indice}`;
+            opcion.setAttribute('role', 'option');
+            opcion.setAttribute('aria-selected', 'false');
+            opcion.tabIndex = -1;
+            const nombre = document.createElement('span');
+            nombre.textContent = medicamento.nombre;
+            const codigo = document.createElement('small');
+            codigo.textContent = medicamento.codigo;
+            opcion.append(nombre, codigo);
+            opcion.addEventListener('mousedown', evento => evento.preventDefault());
+            opcion.addEventListener('click', () => elegir(medicamento));
+            lista.append(opcion);
+        }
+        const posicion = buscador.getBoundingClientRect();
+        lista.style.left = `${posicion.left}px`;
+        lista.style.width = `${posicion.width}px`;
+        const debajo = window.innerHeight - posicion.bottom;
+        const arriba = debajo < 160 && posicion.top > debajo;
+        lista.style.top = arriba ? 'auto' : `${posicion.bottom + 6}px`;
+        lista.style.bottom = arriba ? `${window.innerHeight - posicion.top + 6}px` : 'auto';
+        lista.style.maxHeight = `${Math.max(48, Math.min(240, (arriba ? posicion.top : debajo) - 12))}px`;
+        if (!lista.matches(':popover-open')) lista.showPopover();
+        buscador.setAttribute('aria-expanded', 'true');
+    };
+    lista.addEventListener('toggle', evento => {
+        if (evento.newState === 'closed') {
+            buscador.setAttribute('aria-expanded', 'false');
+            buscador.removeAttribute('aria-activedescendant');
+        }
+    });
+    seccion.append(lista);
     const buscar = (confirmar = false) => {
         const nombre = buscador.value.trim();
         const medicamento = catalogoMedicamentos.find(m => m.nombre.toLocaleLowerCase('es') === nombre.toLocaleLowerCase('es'));
@@ -279,9 +423,28 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
             abrir.focus();
         }
     };
-    buscador.addEventListener('input', () => buscar());
-    buscador.addEventListener('change', () => buscar(true));
+    buscador.addEventListener('input', () => { buscar(); sugerir(); });
+    buscador.addEventListener('focus', sugerir);
+    buscador.addEventListener('change', () => { cerrarSugerencias(); buscar(true); });
+    buscador.addEventListener('blur', cerrarSugerencias);
     buscador.addEventListener('keydown', evento => {
+        if (['ArrowDown', 'ArrowUp'].includes(evento.key)) {
+            evento.preventDefault();
+            if (!lista.matches(':popover-open')) sugerir();
+            const opciones = [...lista.querySelectorAll('button')];
+            if (!opciones.length) return;
+            opcionActiva = (opcionActiva + (evento.key === 'ArrowDown' ? 1 : opciones.length - 1) + opciones.length) % opciones.length;
+            opciones.forEach((opcion, i) => opcion.setAttribute('aria-selected', String(i === opcionActiva)));
+            buscador.setAttribute('aria-activedescendant', opciones[opcionActiva].id);
+            opciones[opcionActiva].scrollIntoView({ block: 'nearest' });
+            return;
+        }
+        if (evento.key === 'Escape') { cerrarSugerencias(); return; }
+        if (evento.key === 'Enter' && lista.matches(':popover-open') && opcionActiva >= 0) {
+            evento.preventDefault();
+            lista.querySelectorAll('button')[opcionActiva].click();
+            return;
+        }
         if (evento.key === 'Enter') { evento.preventDefault(); buscar(true); }
     });
     guardarNuevo.addEventListener('click', async () => {
@@ -297,8 +460,6 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
         try {
             const medicamento = await solicitar(window.farmacia.registrarMedicamento(datos));
             catalogoMedicamentos.push(medicamento);
-            for (const lista of document.querySelectorAll('[data-lote] datalist'))
-                lista.append(new Option(medicamento.codigo, medicamento.nombre));
             selector.value = medicamento.id_medicamento;
             buscador.value = medicamento.nombre;
             buscador.setCustomValidity('');
@@ -331,6 +492,9 @@ async function solicitar(promesa) {
     return respuesta.datos;
 }
 function limpiarFormulario() {
+    lotesAgregados = [];
+    loteEnEdicion = null;
+    pintarLotesAgregados();
     form.reset();
     document.getElementById('lotesNuevos').replaceChildren();
     siguienteLote = 0;
@@ -341,9 +505,11 @@ function limpiarFormulario() {
     form.elements.fecha_compra.value = fecha;
     form.elements.fecha_compra.max = fecha;
     actualizarTotales();
+    agregarLote();
 }
 function crearFormulario(config, proveedores) {
     form.replaceChildren();
+    form.noValidate = true;
     const encabezado = document.getElementById('comprasEncabezado');
     encabezado.replaceChildren();
     const resumen = document.getElementById('comprasResumen');
@@ -404,16 +570,11 @@ function crearFormulario(config, proveedores) {
             seccion.className = 'col-12';
             const lotes = document.createElement('div');
             lotes.id = 'lotesNuevos';
-            const agregar = document.createElement('button');
-            agregar.type = 'button';
-            agregar.className = 'btn btn-outline-success';
-            agregar.textContent = '+ Añadir lote';
-            agregar.addEventListener('click', agregarLote);
-            seccion.append(lotes, agregar);
+            seccion.append(lotes);
             form.append(seccion);
         }
     }
-    // Agrupa el cierre de la compra en el panel lateral de pagos.
+    // Agrupa el cierre de la compra debajo del flujo de lotes.
     for (const nombre of ['metodo_pago', 'estado', 'total']) {
         resumen.append(resumen.querySelector(`[data-resumen="${nombre}"]`));
     }
@@ -455,14 +616,19 @@ async function cargar() {
 }
 form.addEventListener('submit', async (evento) => {
     evento.preventDefault();
-    if (guardar.disabled || !form.reportValidity()) return;
+    if (guardar.disabled) return;
+    const actual = document.querySelector('[data-lote]');
+    const incluirActual = loteActualTieneDatos(actual);
+    // El editor vac?o no impide guardar los lotes ya a?adidos.
+    if (actual && !incluirActual) actual.disabled = true;
+    const valido = form.reportValidity();
     const datos = Object.fromEntries(new FormData(form));
-    datos.lotes = [...document.querySelectorAll('[data-lote]')].map(lote =>
-        ({ ...Object.fromEntries([...lote.querySelectorAll('[data-campo]')]
-            .filter(input => !input.disabled && !['nombre_medicamento', 'laboratorio'].includes(input.dataset.campo))
-            .map(input => [input.dataset.campo, input.value])), numero_automatico: !lote.querySelector('[data-campo="numero_lote"]').value.trim() }));
+    if (actual && !incluirActual) actual.disabled = false;
+    if (!valido) return;
+    datos.lotes = lotesAgregados.filter((lote, indice) => indice !== loteEnEdicion).map(lote => ({ ...lote.datos }));
+    if (incluirActual) datos.lotes.push(datosLote(actual));
     if (!datos.lotes.length) { mensaje('Agregá al menos un lote a la compra.', true); return; }
-    const controles = [...form.elements, guardar, limpiar].map(c => [c, c.disabled]);
+    const controles = [...form.elements, ...document.querySelectorAll('#lotesAgregados button'), guardar, limpiar].map(c => [c, c.disabled]);
     controles.forEach(([c]) => { c.disabled = true; });
     let guardada = false;
     try {

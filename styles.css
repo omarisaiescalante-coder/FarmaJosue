@@ -454,7 +454,7 @@ th {
 }
 /* Separa el título del botón de regreso. */
 #usuarios-titulo {
-    margin-top: 24px;
+    margin-top: 8px;
 }
 /* En ventanas pequeñas, usa una columna y adapta cabecera, tarjetas y espacios. */
 @media (max-width: 560px) {
@@ -1005,9 +1005,33 @@ a:hover { color: #194fb9; }
 .modulo-navegacion a:hover { background: #edf3ff; }
 .modulo-navegacion a[aria-current="page"] { background: #2463df; color: white; }
 .modulo-navegacion a[aria-current="page"] > span { color: white; }
+.modulo-navegacion { background: linear-gradient(165deg, #103b60, #123f79 65%, #174d91); border-right-color: #123f79; }
+.modulo-navegacion h2 { color: #d6e6ff; }
+.modulo-navegacion a { background: #ffffff0d; color: white; }
+.modulo-navegacion a > span { color: #bddaff; }
+.modulo-navegacion a:hover { background: #2d6bcc; }
+.modulo-navegacion a[aria-current="page"] { background: #2d6bcc; box-shadow: inset 3px 0 #a7caff; }
+.modulo-navegacion a > .modulo-menu-etiqueta { width: auto; font-size: 14px; color: white; text-align: left; }
+.modulo-menu-alternar { display: flex; flex-direction: column; justify-content: center; gap: 5px; width: 40px; height: 40px; padding: 10px; border: 1px solid #ffffff35; background: #ffffff0d; border-radius: 8px; margin-bottom: 10px; }
+.modulo-menu-alternar span { display: block; height: 2px; width: 20px; background: white; border-radius: 2px; }
+.modulo-menu-alternar:hover { background: #2d6bcc; }
+.modulo-layout.modulo-menu-compacto { grid-template-columns: 76px minmax(0, 1fr); }
+.modulo-menu-compacto .modulo-navegacion { padding-inline: 12px; }
+.modulo-menu-compacto .modulo-navegacion h2,
+.modulo-menu-compacto .modulo-menu-etiqueta { display: none; }
+.modulo-menu-compacto .modulo-navegacion a { justify-content: center; padding: 12px 6px; }
 .modulo-layout > main { min-width: 0; width: 100%; max-width: none; margin: 0; }
+body[data-module] main h1 {
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: -.9px;
+    color: #142f55;
+    margin: 8px 0 12px;
+}
 @media (max-width: 700px) {
     .modulo-layout { grid-template-columns: minmax(0, 1fr); }
+    .modulo-layout.modulo-menu-compacto { grid-template-columns: minmax(0, 1fr); }
     .modulo-navegacion { position: static; min-height: 0; flex-direction: row; flex-wrap: wrap; gap: 8px; padding: 12px; border-right: 0; border-bottom: 1px solid #d8e5fa; }
     .modulo-navegacion h2 { flex-basis: 100%; margin: 0 0 4px; }
     .modulo-navegacion a { padding: 9px 10px; font-size: 13px; }
