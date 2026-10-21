@@ -76,17 +76,21 @@
                         <div class="hero-fecha"><span>HOY</span><strong id="dashboard-fecha"></strong><span>Un nuevo día para cuidar</span></div>
                     </div>
                     <div class="ventas-resumen-grid">
-                    <article class="tarjeta-total-ventas" aria-labelledby="total-ventas-titulo">
-                        <div class="total-ventas-cabecera"><span class="total-ventas-icono" aria-hidden="true">↗</span><h2 id="total-ventas-titulo">Total de ventas</h2></div>
-                        <div aria-live="polite" role="status"><strong id="dashboard-total-ventas">Cargando…</strong><p id="dashboard-ventas-mensaje">Consultando ventas registradas</p></div>
+                    <article class="tarjeta-total-ventas tarjeta-ventas-dia" aria-labelledby="ventas-dia-titulo">
+                        <div class="total-ventas-cabecera"><span class="total-ventas-icono" aria-hidden="true">☀</span><h2 id="ventas-dia-titulo">Ventas diarias</h2></div>
+                        <div aria-live="polite" role="status"><strong id="dashboard-ventas-dia">Cargando…</strong><p id="dashboard-ventas-dia-mensaje">Consultando las ventas de hoy</p></div>
                     </article>
                     <article class="tarjeta-ventas-semana" aria-labelledby="ventas-semana-titulo">
                         <div class="total-ventas-cabecera"><span class="total-ventas-icono" aria-hidden="true">▥</span><h2 id="ventas-semana-titulo">Ventas semanales</h2></div>
-                        <p class="semana-periodo">Vista de demostración · Últimos 7 días</p>
+                        <p class="semana-periodo">Últimos 7 días · Incluye hoy</p>
                         <strong id="ventas-semana-total">Cargando…</strong>
                         <p id="ventas-semana-mensaje" role="status" aria-live="polite"></p>
                         <div id="ventas-semana-grafico" class="semana-grafico" aria-label="Ventas diarias de la semana"></div>
                         <p class="semana-periodo">Un anillo por día. Su longitud compara el monto con el día de mayor venta.</p>
+                    </article>
+                    <article class="tarjeta-total-ventas tarjeta-ventas-historicas" aria-labelledby="total-ventas-titulo">
+                        <div class="total-ventas-cabecera"><span class="total-ventas-icono" aria-hidden="true">↗</span><h2 id="total-ventas-titulo">Total de ventas</h2></div>
+                        <div aria-live="polite" role="status"><strong id="dashboard-total-ventas">Cargando…</strong><p id="dashboard-ventas-mensaje">Consultando ventas registradas</p></div>
                     </article>
                     </div>
                     </div>
@@ -100,19 +104,19 @@
                     <div class="modulos-grid">
                     <!-- Acceso a Usuarios; se muestra solo para administradores. -->
                     <button id="abrir-usuarios" type="button" hidden>
-                        <span class="modulo-icono" aria-hidden="true">◎</span><strong>Usuarios</strong>
+                        <span class="modulo-icono" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M17 5a3 3 0 0 1 0 6M21 21v-3a6 6 0 0 0-3-5"/></svg></span><strong>Usuarios</strong>
                     </button>
                     <button id="abrir-compras" type="button">
-                        <span class="modulo-icono" aria-hidden="true">↙</span><strong>Compras</strong>
+                        <span class="modulo-icono" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 3h2l2 12h11l3-9H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span><strong>Compras</strong>
                     </button>
-                    <button id="abrir-medicamentos" type="button"><span class="modulo-icono" aria-hidden="true">✚</span>
+                    <button id="abrir-medicamentos" type="button"><span class="modulo-icono" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m9 15 6-6M5 19a5 5 0 0 1 0-7l7-7a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7 0Z"/></svg></span>
                         <strong>Medicamentos</strong></button>
                     <button id="abrir-ventas" type="button">
-                        <span class="modulo-icono" aria-hidden="true">↗</span><strong>Ventas</strong>
+                        <span class="modulo-icono" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 20h16M5 15l5-5 4 3 6-8M14 5h6v6"/></svg></span><strong>Ventas</strong>
                     </button>
                     <!-- Acceso a Facturas -->
                     <button id="abrir-facturas" type="button">
-                        <span class="modulo-icono" aria-hidden="true">≡</span><strong>Facturas</strong>
+                        <span class="modulo-icono" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3ZM9 7h6M9 11h6M9 15h3"/></svg></span><strong>Facturas</strong>
                     </button>
                     </div>
 <div class="sidebar-sesion"><div class="sesion">

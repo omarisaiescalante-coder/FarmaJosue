@@ -64,6 +64,8 @@ async function cargarTotalVentas() {
     const mensaje = document.getElementById('dashboard-ventas-mensaje');
     total.textContent = 'Cargando…';
     mensaje.textContent = 'Consultando ventas registradas';
+    document.getElementById('dashboard-ventas-dia').textContent = 'Cargando…';
+    document.getElementById('dashboard-ventas-dia-mensaje').textContent = 'Consultando las ventas de hoy';
     document.getElementById('ventas-semana-total').textContent = 'Cargando…';
     document.getElementById('ventas-semana-mensaje').textContent = '';
     document.getElementById('ventas-semana-grafico').replaceChildren();
@@ -73,13 +75,15 @@ async function cargarTotalVentas() {
         if (resultado.error) throw new Error(resultado.error);
         total.textContent = 'L ' + new Intl.NumberFormat('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(resultado.datos.total));
         mensaje.textContent = `${resultado.datos.cantidad} ventas completadas · Acumulado histórico`;
-        const montosDemo = [450, 720, 980, 560, 1250, 890, 1500];
-        dibujarVentasSemana(resultado.datos.semana.map((dia, i) => ({
-            ...dia, total: montosDemo[i], cantidad: [3, 5, 7, 4, 9, 6, 10][i],
-        })));
+        const hoy = resultado.datos.semana.at(-1);
+        document.getElementById('dashboard-ventas-dia').textContent = 'L ' + new Intl.NumberFormat('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(hoy.total);
+        document.getElementById('dashboard-ventas-dia-mensaje').textContent = `${hoy.cantidad} ventas completadas · Hoy`;
+        dibujarVentasSemana(resultado.datos.semana);
     } catch (problema) {
         if (consulta !== consultaVentas || !sesionActual) return;
         total.textContent = 'No disponible';
+        document.getElementById('dashboard-ventas-dia').textContent = 'No disponible';
+        document.getElementById('dashboard-ventas-dia-mensaje').textContent = 'No se pudieron consultar las ventas de hoy.';
         mensaje.textContent = 'No se pudo consultar el total. Volvé a entrar al panel para reintentar.';
         document.getElementById('ventas-semana-total').textContent = 'No disponible';
         document.getElementById('ventas-semana-mensaje').textContent = 'No se pudieron cargar las estadísticas.';
@@ -91,7 +95,7 @@ function dibujarVentasSemana(dias) {
     const total = dias.reduce((suma, dia) => suma + dia.total, 0);
     const cantidad = dias.reduce((suma, dia) => suma + dia.cantidad, 0);
     document.getElementById('ventas-semana-total').textContent = moneda(total);
-    document.getElementById('ventas-semana-mensaje').textContent = `Demostración · ${cantidad} ventas ficticias`;
+    document.getElementById('ventas-semana-mensaje').textContent = `${cantidad} ventas completadas`;
     const grafico = document.getElementById('ventas-semana-grafico');
     grafico.replaceChildren();
     const ns = 'http://www.w3.org/2000/svg';
