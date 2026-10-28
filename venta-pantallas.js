@@ -5,7 +5,7 @@ let catalogo = { medicamentos: [], presentaciones: [] };
 let carrito = new Map();     // id_presentacion -> línea de la venta
 let edadManual = false;      // true si el cajero escribió la edad a mano
 let dniTocado = false;       // true cuando el cajero salió del campo DNI
-let denomActiva = null;      // denominación elegida (0 = monto exacto) o null
+let temporizadorMensaje = null; // oculta solo los mensajes de éxito
 
 const $ = (id) => document.getElementById(id);
 const escapar = (t) => String(t ?? '').replace(/[&<>"']/g, (c) =>
@@ -15,10 +15,13 @@ const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u03
 
 function mostrarMensaje(texto, tipo = 'danger') {
     const caja = $('message');
+    clearTimeout(temporizadorMensaje);
     caja.className = 'alert alert-' + tipo;
     caja.textContent = texto;
+    // Los avisos de éxito desaparecen solos a los pocos segundos.
+    if (tipo === 'success') temporizadorMensaje = setTimeout(ocultarMensaje, 4000);
 }
-const ocultarMensaje = () => { $('message').className = 'alert d-none'; };
+const ocultarMensaje = () => { clearTimeout(temporizadorMensaje); $('message').className = 'alert d-none'; };
 
 const lineas = () => [...carrito.values()];
 const hayReceta = () => lineas().some((l) => l.restriccion === 'Con Receta Medica');
@@ -120,19 +123,6 @@ function actualizarPago(calc) {
     const efectivo = $('metodoPago').value === 'Efectivo';
     $('bloqueEfectivo').hidden = !efectivo;
     if (!efectivo) return;
-    // Si se eligió un billete, el dinero recibido sigue al total cuando este cambia.
-    if (denomActiva !== null && calc.total > 0) {
-        const paso = denomActiva === 0 ? calc.total : denomActiva * 100;
-        const centavos = Math.ceil(calc.total / paso) * paso;
-        $('recibido').value = (centavos / 100).toFixed(2);
-        $('resDenominacion').textContent = denomActiva === 0 ? 'Paga con el monto exacto.'
-            : 'Paga con ' + (centavos / paso) + ' × L. ' + denomActiva + '.';
-    } else if (denomActiva === null) $('resDenominacion').textContent = '';
-    document.querySelectorAll('[data-denom]').forEach((b) => {
-        const activo = denomActiva !== null && Number(b.dataset.denom) === denomActiva;
-        b.classList.toggle('btn-success', activo);
-        b.classList.toggle('btn-outline-success', !activo);
-    });
     const r = recibidoCentavos(), caja = $('resCambio');
     if (r === null || !calc.total) { caja.className = 'fs-5 fw-semibold'; caja.textContent = 'Cambio: —'; return; }
     const pago = C.calcularCambio(calc.total, r);
@@ -177,7 +167,7 @@ async function cargarTabla() {
     if (r.error) throw new Error(r.error);
     $('tablaVentas').innerHTML = r.datos.map((v) => `
         <tr>
-            <td>${v.id_cliente ?? '—'}</td>
+            <td>${escapar(v.numero_factura || '—')}</td>
             <td>${escapar(v.dni_cliente || 'Sin DNI')}</td>
             <td>${new Date(v.fecha_venta).toLocaleString('es-HN')}</td>
             <td>L. ${Number(v.total).toFixed(2)}</td>
@@ -210,15 +200,7 @@ $('dni').addEventListener('input', () => {
 $('dni').addEventListener('blur', () => { dniTocado = true; actualizarVenta(); });
 $('edad').addEventListener('input', () => { edadManual = $('edad').value !== ''; actualizarVenta(); });
 $('metodoPago').addEventListener('change', actualizarVenta);
-$('recibido').addEventListener('input', () => { denomActiva = null; actualizarVenta(); });
-$('denominaciones').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-denom]');
-    if (!b) return;
-    if (!carrito.size) return mostrarMensaje('Agrega medicamentos antes de cobrar.');
-    ocultarMensaje();
-    denomActiva = Number(b.dataset.denom);
-    actualizarVenta();
-});
+$('recibido').addEventListener('input', actualizarVenta);
 
 $('guardarButton').addEventListener('click', async () => {
     const error = errorVenta(calcular());
@@ -235,11 +217,11 @@ $('guardarButton').addEventListener('click', async () => {
             items: lineas().map((l) => ({ id_presentacion: l.id_presentacion, cantidad: l.cantidad })),
         });
         if (r.error) throw new Error(r.error);
-        mostrarMensaje('Venta registrada correctamente (' + r.datos.numero_factura + ').'
+        mostrarMensaje('¡Venta registrada correctamente! Factura ' + r.datos.numero_factura + '.'
             + (efectivo ? ' Cambio: L. ' + Number(r.datos.cambio).toFixed(2) : ''), 'success');
         carrito.clear();
         $('dni').value = ''; $('edad').value = ''; $('recibido').value = '';
-        edadManual = false; dniTocado = false; denomActiva = null;
+        edadManual = false; dniTocado = false;
         await cargarTabla();
         await iniciarCatalogo(); // refresca existencias
     } catch (error) { mostrarMensaje(error.message || 'No se pudo guardar la venta.'); }
@@ -253,6 +235,91 @@ async function iniciarCatalogo() {
     pintarResultados();
     actualizarVenta();
 }
+
+// ---------- Reportes de ventas ----------
+let reporteActual = null;   // último reporte consultado (se reutiliza al descargar)
+const fechaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dinero = (n) => 'L. ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function aplicarPeriodo() {
+    const hoy = new Date(), periodo = $('reportePeriodo').value;
+    if (periodo === 'personalizado') { $('reporteDesde').disabled = false; $('reporteHasta').disabled = false; return; }
+    const inicio = new Date(hoy);
+    if (periodo === 'semana') inicio.setDate(hoy.getDate() - 6);
+    if (periodo === 'mes') inicio.setDate(1);
+    $('reporteDesde').value = fechaLocal(inicio);
+    $('reporteHasta').value = fechaLocal(hoy);
+    $('reporteDesde').disabled = true; $('reporteHasta').disabled = true;
+}
+
+async function consultarReporte() {
+    $('reporteEstado').textContent = '';
+    try {
+        const r = await window.farmacia.reporteVentas({ desde: $('reporteDesde').value, hasta: $('reporteHasta').value });
+        if (r.error) throw new Error(r.error);
+        reporteActual = { ...r.datos, desde: $('reporteDesde').value, hasta: $('reporteHasta').value };
+        const m = r.datos.resumen;
+        const metodos = Object.entries(m.porMetodo).map(([nombre, total]) => `${escapar(nombre)}: ${dinero(total)}`).join(' · ') || '—';
+        $('reporteResumen').innerHTML = `
+            <dt class="col-sm-3">Ventas completadas</dt><dd class="col-sm-3">${m.cantidad}${m.anuladas ? ` (${m.anuladas} anuladas)` : ''}</dd>
+            <dt class="col-sm-3">Total vendido</dt><dd class="col-sm-3 fw-bold">${dinero(m.total)}</dd>
+            <dt class="col-sm-3">Descuentos</dt><dd class="col-sm-3">${dinero(m.descuento)}</dd>
+            <dt class="col-sm-3">ISV</dt><dd class="col-sm-3">${dinero(m.impuesto)}</dd>
+            <dt class="col-sm-3">Por método de pago</dt><dd class="col-sm-9">${metodos}</dd>`;
+        $('reporteTabla').innerHTML = r.datos.ventas.map((v) => `
+            <tr class="${v.estado === 'Anulada' ? 'text-secondary' : ''}">
+                <td>${escapar(v.numero_factura)}</td><td>${new Date(v.fecha_venta.replace(' ', 'T')).toLocaleString('es-HN')}</td>
+                <td>${escapar(v.vendedor)}</td><td>${escapar(v.dni_cliente || 'Sin DNI')}</td>
+                <td class="text-end">${dinero(v.subtotal)}</td><td class="text-end">${dinero(v.descuento)}</td>
+                <td class="text-end">${dinero(v.impuesto)}</td><td class="text-end">${dinero(v.total)}</td>
+                <td>${escapar(v.metodo_pago)}</td><td>${escapar(v.estado)}</td>
+            </tr>`).join('') || '<tr><td colspan="10" class="text-center text-secondary">No hay ventas en este periodo.</td></tr>';
+        return true;
+    } catch (error) {
+        reporteActual = null;
+        $('reporteEstado').textContent = error.message || 'No se pudo consultar el reporte.';
+        return false;
+    }
+}
+
+// CSV con BOM para que Excel respete las tildes; se protege contra fórmulas (=, +, -, @).
+function celdaCsv(valor) {
+    let t = String(valor ?? '');
+    if (/^[=+\-@]/.test(t)) t = "'" + t;
+    return '"' + t.replace(/"/g, '""') + '"';
+}
+async function descargarReporte() {
+    if (!(await consultarReporte())) return;
+    const m = reporteActual.resumen;
+    const filas = [
+        ['Reporte de ventas - Farmacia Josué'], ['Desde', reporteActual.desde, 'Hasta', reporteActual.hasta], [],
+        ['No. de factura', 'Fecha', 'Vendedor', 'DNI del cliente', 'Subtotal', 'Descuento', 'ISV', 'Total', 'Método de pago', 'Estado'],
+        ...reporteActual.ventas.map((v) => [v.numero_factura, v.fecha_venta, v.vendedor, v.dni_cliente || 'Sin DNI',
+            Number(v.subtotal).toFixed(2), Number(v.descuento).toFixed(2), Number(v.impuesto).toFixed(2), Number(v.total).toFixed(2), v.metodo_pago, v.estado]),
+        [], ['Ventas completadas', m.cantidad, 'Anuladas', m.anuladas],
+        ['Subtotal', m.subtotal.toFixed(2), 'Descuento', m.descuento.toFixed(2), 'ISV', m.impuesto.toFixed(2), 'Total', m.total.toFixed(2)],
+    ];
+    const blob = new Blob(['\ufeff' + filas.map((f) => f.map(celdaCsv).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(blob);
+    enlace.download = `reporte-ventas_${reporteActual.desde}_a_${reporteActual.hasta}.csv`;
+    document.body.append(enlace); enlace.click(); enlace.remove();
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+    mostrarMensaje('Reporte de ventas generado correctamente.', 'success');
+}
+
+function abrirReporte(titulo) {
+    $('tituloReporte').textContent = titulo;
+    $('reportePeriodo').value = 'hoy';
+    aplicarPeriodo();
+    bootstrap.Modal.getOrCreateInstance($('modalReporte')).show();
+    consultarReporte();
+}
+$('verReportesButton').addEventListener('click', () => abrirReporte('Reportes de ventas'));
+$('generarReporteButton').addEventListener('click', () => abrirReporte('Generar reporte de ventas'));
+$('reportePeriodo').addEventListener('change', () => { aplicarPeriodo(); consultarReporte(); });
+$('reporteConsultar').addEventListener('click', consultarReporte);
+$('reporteDescargar').addEventListener('click', descargarReporte);
 
 $('logoutButton').addEventListener('click', async () => {
     try { await window.farmacia.cerrarSesion(); window.location.href = 'index.html'; }

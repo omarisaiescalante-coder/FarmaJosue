@@ -48,4 +48,5 @@ contextBridge.exposeInMainWorld('farmacia', {
     resumenVentas: () => ipcRenderer.invoke('ventas:resumen'),
     guardarVenta: (datos) => ipcRenderer.invoke('ventas:guardar', datos),
     obtenerFactura: (id) => ipcRenderer.invoke('ventas:factura', id),
+    reporteVentas: (rango) => ipcRenderer.invoke('ventas:reporte', rango),
 });

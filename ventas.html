@@ -11,7 +11,7 @@
 </head>
 <body data-module="ventas" class="bg-light">
     <nav class="navbar navbar-dark bg-success px-4 py-3 shadow">
-        <strong class="navbar-brand"><img class="logo-marca" src="assets/logo-farmajosue.png" alt=""> Farmacia Josué</strong>
+        <a href="index.html" class="navbar-brand" aria-label="Farmacia Josué: ir al menú principal" title="Ir al menú principal"><img class="logo-marca" src="assets/logo-farmajosue.png" alt=""> Farmacia Josué</a>
         <span id="sessionUser" class="text-white"></span>
         <button id="logoutButton" class="btn btn-outline-light" type="button">Cerrar sesión</button>
     </nav>
@@ -19,7 +19,6 @@
     <main class="container-fluid p-4">
         
         <h1>Ventas</h1>
-        <p class="text-secondary">Registro de ventas de medicamentos.</p>
         <div id="message" class="alert d-none" role="alert"></div>
 
         <div class="row g-4 mb-4 ventas-ingreso">
@@ -83,15 +82,6 @@
                     <div id="bloqueEfectivo">
                         <label for="recibido" class="form-label">Dinero recibido (L.)</label>
                         <input id="recibido" type="number" min="0" step="0.01" class="form-control mb-2" placeholder="0.00">
-                        <div class="form-label mb-1">Billete o monto con el que paga</div>
-                        <div id="denominaciones" class="btn-group flex-wrap mb-2" role="group" aria-label="Denominación">
-                            <button type="button" class="btn btn-outline-success btn-sm" data-denom="0">Exacto</button>
-                            <button type="button" class="btn btn-outline-success btn-sm" data-denom="20">L. 20</button>
-                            <button type="button" class="btn btn-outline-success btn-sm" data-denom="50">L. 50</button>
-                            <button type="button" class="btn btn-outline-success btn-sm" data-denom="100">L. 100</button>
-                            <button type="button" class="btn btn-outline-success btn-sm" data-denom="500">L. 500</button>
-                        </div>
-                        <div id="resDenominacion" class="small text-secondary mb-2"></div>
                         <div id="resCambio" class="fs-5 fw-semibold" aria-live="polite">Cambio: —</div>
                     </div>
 
@@ -105,15 +95,21 @@
 
         <!-- Registro de ventas (sin boton de factura; las facturas se consultan en su modulo) -->
         <section class="card border-0 rounded-4 shadow-sm p-3">
-            <button class="btn btn-link text-start h5 text-decoration-none" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#registroVentas">
-                Registro de ventas ▾
-            </button>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <button class="btn btn-link text-start h5 text-decoration-none" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#registroVentas">
+                    Registro de ventas ▾
+                </button>
+                <div class="d-flex gap-2">
+                    <button id="verReportesButton" class="btn btn-outline-success" type="button">Ver reportes de ventas</button>
+                    <button id="generarReporteButton" class="btn btn-success" type="button">Generar reporte de ventas</button>
+                </div>
+            </div>
             <div id="registroVentas" class="collapse show table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>ID Cliente</th><th>DNI del cliente</th><th>Fecha</th>
+                            <th>No. de factura</th><th>DNI del cliente</th><th>Fecha</th>
                             <th>Total</th><th>Metodo de pago</th>
                         </tr>
                     </thead>
@@ -122,6 +118,55 @@
             </div>
         </section>
     </main>
+
+    <!-- Reporte de ventas: filtra por periodo, se ve en pantalla y se descarga como CSV -->
+    <div class="modal fade" id="modalReporte" tabindex="-1" aria-labelledby="tituloReporte" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="tituloReporte">Reporte de ventas</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 align-items-end mb-3">
+                        <div class="col-md-3">
+                            <label for="reportePeriodo" class="form-label">Periodo</label>
+                            <select id="reportePeriodo" class="form-select">
+                                <option value="hoy">Hoy</option>
+                                <option value="semana">Últimos 7 días</option>
+                                <option value="mes">Este mes</option>
+                                <option value="personalizado">Personalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="reporteDesde" class="form-label">Desde</label>
+                            <input id="reporteDesde" type="date" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="reporteHasta" class="form-label">Hasta</label>
+                            <input id="reporteHasta" type="date" class="form-control">
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button id="reporteConsultar" class="btn btn-outline-success" type="button">Consultar</button>
+                            <button id="reporteDescargar" class="btn btn-success" type="button">Descargar CSV</button>
+                        </div>
+                    </div>
+                    <div id="reporteEstado" class="small text-danger mb-2" aria-live="polite"></div>
+                    <dl id="reporteResumen" class="row mb-3"></dl>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead>
+                                <tr><th>No. de factura</th><th>Fecha</th><th>Vendedor</th><th>DNI del cliente</th>
+                                    <th class="text-end">Subtotal</th><th class="text-end">Descuento</th><th class="text-end">ISV</th>
+                                    <th class="text-end">Total</th><th>Método de pago</th><th>Estado</th></tr>
+                            </thead>
+                            <tbody id="reporteTabla"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="./calculos-venta.js"></script>
