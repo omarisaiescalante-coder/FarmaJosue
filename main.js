@@ -126,6 +126,7 @@ for (const operacion of [
     'cargar',
     'guardar',
     'lotes',
+    'editarLote',
     'registrarMedicamento'
 ]) {
 

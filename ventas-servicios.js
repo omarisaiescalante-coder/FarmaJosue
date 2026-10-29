@@ -5,7 +5,10 @@ const C = require('./calculos-venta');
 async function cargar(db, usuario) {
     await autorizar(db, usuario, 'ventas');
     const [medicamentos] = await db.execute("SELECT id_medicamento, codigo, nombre, restriccion, stock_total, estado, aplica_isv FROM medicamentos WHERE estado = 'Disponible' ORDER BY nombre");
-    const [presentaciones] = await db.execute('SELECT * FROM medicamento_presentaciones');
+    const [presentaciones] = await db.execute(`SELECT p.*, l.numero_lote, l.cantidad_disponible FROM medicamento_presentaciones p
+        LEFT JOIN lote l ON l.id_lote = p.id_lote
+        WHERE (p.id_lote IS NULL AND EXISTS (SELECT 1 FROM lote n WHERE n.id_medicamento = p.id_medicamento AND n.tipo_medicamento IS NULL AND n.estado = 'Disponible' AND n.cantidad_disponible > 0 AND n.fecha_vencimiento >= CURDATE()))
+        OR (l.estado = 'Disponible' AND l.cantidad_disponible >= p.unidades_stock AND l.fecha_vencimiento >= CURDATE())`);
     return { medicamentos, presentaciones: presentaciones.filter(p => p.estado !== 'Inactiva') };
 }
 async function listar(db, usuario) {
@@ -105,7 +108,8 @@ async function guardar(db, usuario, datos) {
             let falta = l.unidades;
             const [lotes] = await conn.execute(`SELECT id_lote, cantidad_disponible FROM lote WHERE id_medicamento = ?
                 AND estado = 'Disponible' AND cantidad_disponible > 0 AND fecha_vencimiento >= CURDATE()
-                ORDER BY fecha_vencimiento, id_lote FOR UPDATE`, [l.id_medicamento]);
+                AND (? IS NULL OR id_lote = ?) AND (? IS NOT NULL OR tipo_medicamento IS NULL)
+                ORDER BY fecha_vencimiento, id_lote FOR UPDATE`, [l.id_medicamento, l.id_lote || null, l.id_lote || null, l.id_lote || null]);
             for (const lote of lotes) {
                 if (!falta) break;
                 const toma = Math.min(falta, lote.cantidad_disponible), quedan = lote.cantidad_disponible - toma;

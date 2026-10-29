@@ -65,7 +65,9 @@ CREATE TABLE medicamento_presentaciones (
   nombre_presentacion VARCHAR(150) NOT NULL,
   precio_venta DECIMAL(10, 2) NOT NULL,
   unidades_stock INT NOT NULL DEFAULT 1,
-  UNIQUE (id_medicamento, nombre_presentacion),
+  id_lote INT NULL,
+  estado VARCHAR(10) NOT NULL DEFAULT 'Activa',
+  UNIQUE KEY presentacion_lote (id_medicamento, nombre_presentacion, id_lote),
   FOREIGN KEY (id_medicamento) REFERENCES medicamentos (id_medicamento)
 ) ENGINE=InnoDB;
 
@@ -101,6 +103,14 @@ CREATE TABLE lote (
   fecha_fabricacion DATE,
   fecha_vencimiento DATE NOT NULL,
   presentacion_ingreso VARCHAR(20) NOT NULL DEFAULT 'Unidad',
+  tipo_medicamento VARCHAR(20),
+  nombre_medicamento VARCHAR(150),
+  razon_edicion VARCHAR(500),
+  fecha_edicion DATETIME,
+  revision INT NOT NULL DEFAULT 0,
+  modalidad_venta VARCHAR(20),
+  precio_compra_contenido DECIMAL(10, 2),
+  precio_compra_unidad DECIMAL(10, 2),
   contenido_caja VARCHAR(20),
   paquetes_por_caja INT,
   unidades_por_blister INT,
@@ -119,6 +129,16 @@ CREATE TABLE lote (
 -- ======================================================================
 -- 4. VENTAS Y DETALLES
 -- ======================================================================
+
+CREATE TABLE lote_ediciones (
+  id_edicion INT AUTO_INCREMENT PRIMARY KEY,
+  id_lote INT NOT NULL,
+  revision INT NOT NULL,
+  fecha_edicion DATETIME NOT NULL,
+  razon_edicion VARCHAR(500) NOT NULL,
+  UNIQUE KEY lote_revision (id_lote, revision),
+  FOREIGN KEY (id_lote) REFERENCES lote (id_lote)
+) ENGINE=InnoDB;
 
 -- VENTAS
 CREATE TABLE ventas (

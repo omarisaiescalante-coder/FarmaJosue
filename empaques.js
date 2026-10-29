@@ -10,6 +10,7 @@ function dinero(valor) {
     return Number(valor).toFixed(2);
 }
 function validarEmpaque(lote) {
+    if (Object.hasOwn(lote, 'tipo_medicamento') || Object.hasOwn(lote, 'modalidad_venta')) return validarModalidad(lote);
     const forma = lote.presentacion_ingreso || 'Unidad';
     if (Object.hasOwn(lote, 'presentacion_ingreso') && !FORMAS.includes(lote.presentacion_ingreso)) throw new Error('Presentación de ingreso inválida.');
     let contenido = null, paquetes = null, unidades = null, factor = 1;
@@ -35,3 +36,25 @@ function validarEmpaque(lote) {
     return { forma, contenido, paquetes, unidades, factor, precios };
 }
 module.exports = { validarEmpaque };
+
+function validarModalidad(lote) {
+    const tipo = lote.tipo_medicamento, modalidad = lote.modalidad_venta;
+    if (!['Pastilla', 'Frasco', 'Ampolla', 'Suero'].includes(tipo) || !['Caja', 'Caja y unidad'].includes(modalidad))
+        throw new Error('Seleccioná el tipo de medicamento y la restricción de venta.');
+    const pastilla = tipo === 'Pastilla', individual = modalidad === 'Caja y unidad';
+    // Sin venta individual, cada caja de pastillas es una unidad interna de stock.
+    const paquetes = pastilla && !individual ? 1 : entero(lote.paquetes_por_caja, 'el contenido por caja');
+    const unidades = pastilla && individual ? entero(lote.unidades_por_blister, 'las pastillas por blíster') : 1;
+    const factor = entero(paquetes * unidades, 'el contenido total de la caja');
+    const precios = [{ nombre: 'Caja', precio: dinero(lote.precio_venta), unidades: factor }];
+    const compras = { contenido: null, unidad: null };
+    if (individual) {
+        if (pastilla) {
+            precios.push({ nombre: 'Blister', precio: dinero(lote.precio_venta_contenido), unidades });
+            compras.contenido = dinero(lote.precio_compra_contenido);
+        }
+        precios.push({ nombre: pastilla ? 'Pastilla' : 'Unidad', precio: dinero(lote.precio_venta_unidad), unidades: 1 });
+        compras.unidad = dinero(lote.precio_compra_unidad);
+    }
+    return { forma: 'Caja', contenido: pastilla ? 'Blister' : tipo, paquetes, unidades, factor, precios, compras, tipo, modalidad };
+}

@@ -18,7 +18,7 @@ async function probar() {
         creada = true;
         temporal = mysql.createPool({ ...opciones, database: nombre });
         const [tablas] = await temporal.query('SHOW TABLES');
-        assert.equal(tablas.length, 10);
+        assert.equal(tablas.length, 11);
         assert(tablas.some(t => Object.values(t)[0].toLowerCase() === 'ventas'));
         const sesion = { id_usuario: 1 };
         const nuevo = await servicio.registrarMedicamento(temporal, sesion, {

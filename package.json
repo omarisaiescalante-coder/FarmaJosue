@@ -10,6 +10,7 @@
         "start": "electron .",
         "test": "node --test compras-servicio.test.cjs proveedores-servicio.test.cjs modulos.test.cjs calculo-ventas.test.cjs ventas-servicios.test.cjs",
         "test:db": "node esquema.test.cjs",
+        "test:modalidades": "node modalidades-integracion.test.cjs",
         "test:ui": "node ejecutar-pruebas-ui.cjs",
         "migrar": "node actualizar-esquema.js"
     },

@@ -43,10 +43,10 @@ function pintarResultados() {
         return `<div class="list-group-item">
             <div class="d-flex justify-content-between align-items-center">
                 <strong>${escapar(m.nombre)}${m.restriccion === 'Con Receta Medica' ? ' <span class="badge text-bg-warning">Receta</span>' : ''}</strong>
-                <small class="text-secondary">Stock: ${Number(m.stock_total)}</small>
+                <small class="text-secondary">Stock: ${pres.map(p => Math.floor(Number(p.cantidad_disponible ?? m.stock_total) / Number(p.unidades_stock)) + ' ' + escapar(etiqueta(p))).join(' / ')}</small>
             </div>
             ${pres.map((p) => `<div class="d-flex justify-content-between align-items-center mt-1">
-                <span>${escapar(etiqueta(p))}: <strong>L. ${Number(p.precio_venta).toFixed(2)}</strong></span>
+                <span>${escapar(etiqueta(p))}${p.numero_lote ? ` (Lote ${escapar(p.numero_lote)})` : ''}: <strong>L. ${Number(p.precio_venta).toFixed(2)}</strong></span>
                 <button class="btn btn-sm btn-success" type="button" data-mas="${p.id_presentacion}"
                     aria-label="Agregar ${escapar(etiqueta(p))} de ${escapar(m.nombre)}">+</button>
             </div>`).join('')}
@@ -66,8 +66,15 @@ function cambiarCantidad(id, delta) {
     const otras = unidadesReservadas(med.id_medicamento) - actual * unidadesStock;
     if (otras + nueva * unidadesStock > Number(med.stock_total))
         return mostrarMensaje('No hay existencias suficientes de ' + med.nombre + '.');
+    if (pres.id_lote) {
+        const reservadas = lineas().filter(l => l.id_lote === pres.id_lote && l.id_presentacion !== id)
+            .reduce((s, l) => s + l.cantidad * l.unidades_stock, 0);
+        if (reservadas + nueva * unidadesStock > Number(pres.cantidad_disponible))
+            return mostrarMensaje('No hay existencias suficientes del lote seleccionado.');
+    }
     ocultarMensaje();
     carrito.set(id, {
+        id_lote: pres.id_lote,
         id_presentacion: id, id_medicamento: med.id_medicamento, nombre: med.nombre, restriccion: med.restriccion,
         presentacion: etiqueta(pres), precioCentavos: Math.round(Number(pres.precio_venta) * 100),
         unidades_stock: unidadesStock, aplicaIsv: Number(med.aplica_isv) === 1, cantidad: nueva,

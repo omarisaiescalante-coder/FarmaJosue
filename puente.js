@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('farmacia', {
     eliminarProveedor: id => solicitarProveedor('eliminar', id),
     guardarCompra: (datos) => ipcRenderer.invoke('compras:guardar', datos),
     listarLotesCompra: (id) => ipcRenderer.invoke('compras:lotes', id),
+    editarLoteCompra: datos => ipcRenderer.invoke('compras:editarLote', datos),
     registrarMedicamento: (datos) =>
         ipcRenderer.invoke('compras:registrarMedicamento', datos),
 
