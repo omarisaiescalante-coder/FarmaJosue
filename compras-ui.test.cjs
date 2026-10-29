@@ -62,7 +62,7 @@ app.whenReady().then(async () => {
             const cambiar = (nombre, valor) => { campo(nombre).value = valor; campo(nombre).dispatchEvent(new Event('change')); };
             assert(!lote.disabled, 'Lote bloqueado');
             assert([...lote.querySelectorAll('input')].every(i => !i.readOnly), 'Hay campos de lote de solo lectura');
-            assert([...campo('presentacion_ingreso').options].map(o => o.value).filter(Boolean).join(',') === 'Caja,Frasco,Ampolla,Suero,Sueros por caja', 'Empaques incorrectos');
+            assert([...campo('tipo_medicamento').options].map(o => o.value).filter(Boolean).join(',') === 'Pastilla,Frasco,Ampolla,Suero', 'Empaques incorrectos');
             campo('nombre_medicamento').value = 'Exis';
             campo('nombre_medicamento').dispatchEvent(new Event('input'));
             const sugerencias = lote.querySelector('.medicamentos-sugerencias');
@@ -77,14 +77,22 @@ app.whenReady().then(async () => {
             cambiar('nombre_medicamento', 'Existente');
             assert(campo('id_medicamento').value === '1', 'No encuentra medicamento existente');
             assert(campo('laboratorio').value === 'Laboratorio de prueba' && campo('laboratorio').type === 'hidden', 'Laboratorio del lote incorrecto');
-            cambiar('presentacion_ingreso', 'Caja');
-            assert(campo('contenido_caja').parentElement.hidden && campo('contenido_caja').value === 'Blister', 'No configura pastillas automáticamente');
-            assert(!campo('unidades_por_blister').disabled && !campo('precio_venta_unidad').disabled, 'Campos de blíster bloqueados');
-            cambiar('presentacion_ingreso', 'Sueros por caja');
-            assert(campo('unidades_por_blister').disabled && campo('unidades_por_blister').parentElement.hidden, 'Pide pastillas para sobres');
-            assert(!campo('paquetes_por_caja').disabled && !campo('precio_venta_contenido').disabled, 'Campos de sueros bloqueados');
-            cambiar('presentacion_ingreso', 'Suero');
-            assert(campo('contenido_caja').disabled && campo('precio_venta').required, 'Suero no pide precio unitario');
+            for (const tipo of ['Pastilla', 'Frasco', 'Ampolla', 'Suero']) {
+                cambiar('tipo_medicamento', tipo);
+                cambiar('modalidad_venta', 'Caja y unidad');
+                assert(!campo('precio_compra_unidad').disabled && !campo('precio_venta_unidad').disabled, 'Falta precio individual');
+                assert(campo('precio_venta_contenido').disabled === (tipo !== 'Pastilla'), 'Precio blister incorrecto');
+                assert(campo('unidades_por_blister').disabled === (tipo !== 'Pastilla'), 'Equivalencia incorrecta');
+                campo('precio_compra_unidad').value = '4'; campo('precio_venta_unidad').value = '8';
+                cambiar('modalidad_venta', 'Caja');
+                if (tipo === 'Pastilla') {
+                    assert(campo('paquetes_por_caja').disabled && campo('paquetes_por_caja').parentElement.hidden, 'Pide blisteres para caja');
+                    assert(campo('unidades_por_blister').disabled && campo('unidades_por_blister').parentElement.hidden, 'Pide pastillas para caja');
+                    assert(!campo('paquetes_por_caja').value && !campo('unidades_por_blister').value, 'Conserva equivalencias incompatibles');
+                }
+                assert(campo('precio_compra_unidad').parentElement.hidden && campo('precio_venta_unidad').disabled, 'Muestra unidades en Caja');
+                assert(!campo('precio_compra_unidad').value && !campo('precio_venta_unidad').value, 'Conserva precios incompatibles');
+            }
             cambiar('nombre_medicamento', 'Nuevo medicamento');
             const panel = lote.querySelector('fieldset');
             const modal = lote.querySelector('dialog');
@@ -102,9 +110,9 @@ app.whenReady().then(async () => {
             await new Promise(resolve => setTimeout(resolve, 20));
             assert(window.ultimoMedicamento.laboratorio === 'Laboratorio actualizado', 'No hereda laboratorio del encabezado');
             assert(panel.hidden && campo('id_medicamento').value === '2', 'No selecciona medicamento recién registrado');
-            cambiar('presentacion_ingreso', 'Sueros por caja');
+            cambiar('tipo_medicamento', 'Suero'); cambiar('modalidad_venta', 'Caja y unidad');
             cambiar('numero_lote', 'LOTE-MANUAL'); cambiar('paquetes_por_caja', '10'); cambiar('cantidad', '2');
-            cambiar('precio_venta_contenido', '8'); cambiar('fecha_fabricacion', '2025-01-01');
+            cambiar('precio_compra_unidad', '5'); cambiar('precio_venta_unidad', '8'); cambiar('precio_venta', '80'); cambiar('fecha_fabricacion', '2025-01-01');
             cambiar('fecha_vencimiento', '2099-01-01'); cambiar('precio', '50');
             const buscarProveedor = document.getElementById('buscarProveedor');
             buscarProveedor.value = 'Farinter Premium'; buscarProveedor.dispatchEvent(new Event('input'));
@@ -192,6 +200,7 @@ app.whenReady().then(async () => {
             lote.querySelector('[data-guardar-lote]').click();
             assert(document.querySelectorAll('#lotesAgregados .compras-lote-compacto').length === 1, 'Editar duplica el lote');
             cambiar('nombre_medicamento', 'Existente');
+            cambiar('tipo_medicamento', 'Frasco'); cambiar('modalidad_venta', 'Caja'); cambiar('paquetes_por_caja', '10'); cambiar('precio_venta', '20');
             cambiar('cantidad', '3'); cambiar('precio', '10');
             cambiar('fecha_fabricacion', '2025-01-01'); cambiar('fecha_vencimiento', '2099-01-01');
             lote.querySelector('[data-guardar-lote]').click();
@@ -200,6 +209,7 @@ app.whenReady().then(async () => {
             document.querySelectorAll('#lotesAgregados .compras-eliminar-lote')[1].click();
             assert(document.querySelectorAll('#lotesAgregados .compras-lote-compacto').length === 1 && form.elements.total.value === '100.00', 'Eliminar no actualiza la lista y el total');
             cambiar('nombre_medicamento', 'Existente');
+            cambiar('tipo_medicamento', 'Frasco'); cambiar('modalidad_venta', 'Caja'); cambiar('paquetes_por_caja', '10'); cambiar('precio_venta', '20');
             cambiar('cantidad', '3'); cambiar('precio', '10');
             cambiar('fecha_fabricacion', '2025-01-01'); cambiar('fecha_vencimiento', '2099-01-01');
             lote.querySelector('[data-guardar-lote]').click();

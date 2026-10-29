@@ -35,7 +35,7 @@ body[data-module="compras"] [data-lote] .form-control,
 body[data-module="compras"] [data-lote] .form-select { border: 1px solid #dce5e1; border-radius: 8px; background-color: #fff; min-height: 42px; padding: 9px 12px; }
 body[data-module="compras"] [data-lote] .form-control:focus,
 body[data-module="compras"] [data-lote] .form-select:focus { border-color: #379c71; box-shadow: 0 0 0 3px #19875416; }
-body[data-module="compras"] .lote-separador-venta { background: transparent; border: 0; border-bottom: 1px solid #dce5e1; border-radius: 0; color: #61736e; padding: 16px 8px 12px; letter-spacing: .4px; }
+body[data-module="compras"] .lote-separador-venta { background: transparent; border: 0; border-bottom: 1px solid #dce5e1; border-radius: 0; color: #61736e; padding: 16px 8px 12px; margin-bottom: 20px; letter-spacing: .4px; }
 body[data-module="compras"] .lote-total-compra { border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #246749; font-size: 16px; padding: 8px; }
 .compras-pagos { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
 .compras-pagos > h2 { grid-column: 1 / -1; color: #435b50; font-size: 13px; font-weight: 650; letter-spacing: .8px; text-transform: uppercase; padding-bottom: 14px; border-bottom: 1px solid #dce5e1; }

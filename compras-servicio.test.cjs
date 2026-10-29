@@ -213,3 +213,29 @@ test('Guarda lote manual y toma laboratorio de la compra en las tres tablas', as
     assert.equal(e.consultas.find(c => c.sql.startsWith('UPDATE medicamentos')).args[1], 'Proveedor');
     assert.equal(e.consultas.find(c => c.sql.startsWith('INSERT INTO lote')).args[2], 'A');
 });
+
+for (const tipo of ['Pastilla', 'Frasco', 'Ampolla', 'Suero']) {
+    for (const modalidad of ['Caja', 'Caja y unidad']) {
+        test(tipo + ' / ' + modalidad + ': guarda precios, equivalencias y lote', async () => {
+            const e = escenario();
+            e.datos.lotes = [{ id_medicamento: 1, numero_lote: 'NUEVO', cantidad: 2,
+                tipo_medicamento: tipo, modalidad_venta: modalidad, presentacion_ingreso: 'Caja',
+                paquetes_por_caja: 10, unidades_por_blister: 10, precio: 100,
+                precio_compra_contenido: 10, precio_compra_unidad: 1,
+                precio_venta: 200, precio_venta_contenido: 20, precio_venta_unidad: 2,
+                fecha_fabricacion: '2025-01-01', fecha_vencimiento: '2099-01-01' }];
+            await servicio.guardar(e.db, { id_usuario: 1 }, e.datos);
+            const factor = tipo === 'Pastilla' ? (modalidad === 'Caja' ? 1 : 100) : 10;
+            assert.equal(e.consultas.find(c => c.sql.startsWith('INSERT INTO lote')).args[3], factor * 2);
+            const pres = e.consultas.filter(c => c.sql.startsWith('INSERT INTO medicamento_presentaciones'));
+            assert.deepEqual(pres.map(c => c.args[1]), modalidad === 'Caja' ? ['Caja'] : tipo === 'Pastilla' ? ['Caja', 'Blister', 'Pastilla'] : ['Caja', 'Unidad']);
+            assert(pres.every(c => c.args[4] === 25));
+            const config = e.consultas.find(c => c.sql.startsWith('UPDATE lote SET tipo_medicamento'));
+            assert.deepEqual(config.args, [tipo, modalidad, modalidad === 'Caja y unidad' && tipo === 'Pastilla' ? '10.00' : null, modalidad === 'Caja y unidad' ? '1.00' : null, 25]);
+        });
+    }
+}
+test('No admite precios incompletos en presentaciones habilitadas', () => {
+    const { validarEmpaque } = require('./empaques');
+    assert.throws(() => validarEmpaque({tipo_medicamento:'Frasco', modalidad_venta:'Caja y unidad', paquetes_por_caja:10, precio_venta:100}));
+});
