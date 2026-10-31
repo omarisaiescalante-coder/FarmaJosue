@@ -48,11 +48,16 @@ function dibujarUsuarios() {
     const cuerpo = document.getElementById('usuarios-filas');
     cuerpo.replaceChildren();
     const busqueda = document.getElementById('buscar-usuario').value.trim().toLowerCase();
-    for (const usuario of usuariosRegistrados.filter((u) =>
+    document.getElementById('usuarios-total').textContent = usuariosRegistrados.length;
+    document.getElementById('usuarios-activos').textContent = usuariosRegistrados.filter(u => u.estado === 'Activo').length;
+    document.getElementById('usuarios-inactivos').textContent = usuariosRegistrados.filter(u => u.estado === 'Inactivo').length;
+    const visibles = usuariosRegistrados.filter((u) =>
         `${u.nombre} ${u.apellido} ${u.nombre_usuario} ${u.identidad || ''}`
             .toLowerCase()
             .includes(busqueda),
-    )) {
+    );
+    document.getElementById('usuarios-conteo').textContent = visibles.length + ' de ' + usuariosRegistrados.length + ' cuentas';
+    for (const usuario of visibles) {
         // Crea las celdas usando textContent para mostrar los datos como texto.
         const fila = document.createElement('tr');
         for (const valor of [
@@ -63,7 +68,12 @@ function dibujarUsuarios() {
             usuario.estado,
         ]) {
             const celda = document.createElement('td');
-            celda.textContent = valor;
+            if (valor === usuario.estado || valor === usuario.rol) {
+                const insignia = document.createElement('span');
+                insignia.className = 'usuario-insignia ' + (valor === usuario.estado ? (usuario.estado === 'Activo' ? 'activo' : 'inactivo') : 'rol');
+                insignia.textContent = valor;
+                celda.append(insignia);
+            } else celda.textContent = valor;
             fila.append(celda);
         }
         const acciones = document.createElement('td');
@@ -102,7 +112,8 @@ function dibujarUsuarios() {
         const fila = document.createElement('tr');
         const celda = document.createElement('td');
         celda.colSpan = 6;
-        celda.textContent = 'No hay usuarios para mostrar.';
+        celda.className = 'usuarios-vacio';
+        celda.textContent = busqueda ? 'No encontramos coincidencias. Prueba con otro nombre o identidad.' : 'Todavía no hay usuarios. Crea la primera cuenta desde el formulario.';
         fila.append(celda);
         cuerpo.append(fila);
     }

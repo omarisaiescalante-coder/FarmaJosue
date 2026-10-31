@@ -11,7 +11,7 @@
         />
         <title>Usuarios | Farmacia Josué</title>
         <!-- Comparte los estilos visuales del sistema. -->
-        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="styles.css" /><link rel="stylesheet" href="usuarios.css" />
         <!-- Carga la lógica de esta pantalla después de leer el HTML. -->
         <script src="usuarios-ui.js" defer></script>
         <script src="navegacion.js" defer></script>
@@ -37,15 +37,15 @@
                 <!-- Módulo de usuarios: navegación, formulario y tabla de registros. -->
                 <section id="usuarios-vista" aria-labelledby="usuarios-titulo">
                     
-                    <h1 id="usuarios-titulo" tabindex="-1">Usuarios</h1>
+                    <div class="usuarios-encabezado"><div><p class="usuarios-etiqueta">ADMINISTRACIÓN</p><h1 id="usuarios-titulo" tabindex="-1">Gestión de usuarios</h1><p class="usuarios-ayuda">Administra las cuentas y los permisos de tu equipo.</p></div><span class="usuarios-acceso">Acceso de administrador</span></div><div class="usuarios-resumen" aria-label="Resumen de usuarios"><div><span>Total de usuarios</span><strong id="usuarios-total">—</strong></div><div><span>Cuentas activas</span><strong id="usuarios-activos">—</strong></div><div><span>Cuentas inactivas</span><strong id="usuarios-inactivos">—</strong></div></div>
                 
                     <!-- Muestra el progreso, los errores y la confirmación de guardado. -->
                     <p id="usuarios-mensaje" role="status" aria-live="polite"></p>
                     <!-- El mismo formulario permite crear cuentas y editar las seleccionadas. -->
-                    <form id="usuarios-form" class="caja">
-                        <h2 id="usuario-form-titulo">Nuevo usuario</h2>
+                    <div class="usuarios-layout"><form id="usuarios-form" class="caja usuarios-formulario">
+                        <p class="usuarios-etiqueta">CUENTA DEL EQUIPO</p><h2 id="usuario-form-titulo">Nuevo usuario</h2><p class="usuarios-ayuda">Los campos con * son obligatorios.</p>
                         <!-- Datos personales, contacto y credenciales. name identifica cada campo al guardar. -->
-                        <div class="campos-usuario">
+                        <div class="campos-usuario"><h3 class="usuarios-seccion">01 · Datos personales</h3>
                             <label
                                 >Nombre *<input name="nombre" maxlength="100" required
                             /></label>
@@ -82,8 +82,7 @@
                             <label
                                 >Dirección<input name="direccion" maxlength="255"
                             /></label>
-                            <label
-                                >Nombre de usuario *<input
+                            <h3 class="usuarios-seccion">02 · Acceso y permisos</h3><label>Nombre de usuario *<input
                                     name="nombre_usuario"
                                     maxlength="50"
                                     autocomplete="off"
@@ -91,8 +90,7 @@
                             /></label>
                             <label
                                 >Contraseña<input
-                                    name="contrasena"
-                                    type="text"
+                                    name="contrasena" type="password"
                                     minlength="9"
                                     pattern="(?=.*\p{Lu})(?=.*[0-9])(?=.*[^\p{L}\p{N}\s]).{9,1024}"
                                     title="Mínimo 9 caracteres, una mayúscula, un número y un carácter especial."
@@ -118,7 +116,7 @@
                         <!-- Explica cómo conservar la contraseña al editar un registro. -->
                         
                         <!-- Guardar envía los datos; cancelar limpia el formulario sin guardar. -->
-                        <div class="acciones">
+                        <p id="clave-ayuda" class="usuarios-ayuda">Usa al menos 9 caracteres, una mayúscula, un número y un carácter especial. Al editar, deja la contraseña vacía para conservarla.</p><div class="acciones">
                             <button id="guardar-usuario" type="submit">
                                 Guardar usuario</button
                             ><button id="cancelar-usuario" type="button">
@@ -127,14 +125,14 @@
                         </div>
                     </form>
                     <!-- Buscador y listado; el filtro se aplica sobre los usuarios cargados. -->
-                    <div class="caja">
+                    <div class="caja usuarios-directorio"><div class="usuarios-lista-titulo"><div><p class="usuarios-etiqueta">DIRECTORIO</p><h2>Usuarios registrados</h2></div><span id="usuarios-conteo" class="usuarios-conteo">0 cuentas</span></div>
                         <label for="buscar-usuario"
                             >Buscar por nombre, usuario o identidad</label
                         >
                         <input
                             id="buscar-usuario"
                             type="search"
-                            placeholder="Buscar usuario..."
+                            placeholder="Nombre, usuario o identidad..."
                         />
                         <!-- Contenedor que permite desplazar horizontalmente la tabla en pantallas angostas. -->
                         <div class="tabla-contenedor">
@@ -157,8 +155,7 @@
                                 <tbody id="usuarios-filas"></tbody>
                             </table>
                         </div>
-                    </div>
-                </section>
+                    </div></div></section>
             </main>
         </div>
         <!-- Mensaje inicial mientras se verifica el acceso; también muestra fallos de conexión. -->
