@@ -77,10 +77,10 @@ function actualizarTotales() {
         const centavos = Math.round(precio * 100) * cantidad;
         const subtotal = Number.isSafeInteger(centavos) && centavos >= 0 ? centavos : 0;
         lote.querySelector('[data-total-lote]').textContent = `Precio de compra total: L ${(subtotal / 100).toFixed(2)}`;
-        const forma = lote.querySelector('[data-campo="presentacion_ingreso"]').value;
         const paquetes = Number(lote.querySelector('[data-campo="paquetes_por_caja"]').value);
         const pastillas = Number(lote.querySelector('[data-campo="unidades_por_blister"]').value);
-        const unidades = cantidad * (forma === 'Caja' ? paquetes * pastillas : forma === 'Sueros por caja' ? paquetes : 1);
+        const esPastilla = lote.querySelector('[data-campo="tipo_medicamento"]').value === 'Pastilla';
+        const unidades = cantidad * paquetes * (esPastilla ? pastillas : 1);
         lote.querySelector('[data-unidades-lote]').textContent = `Unidades totales a ingresar: ${Number.isSafeInteger(unidades) && unidades >= 0 ? unidades : 0}`;
         total += subtotal;
     }
@@ -94,22 +94,23 @@ function agregarLote() {
     lote.dataset.lote = '';
     lote.className = 'compra-lote';
     const leyenda = document.createElement('legend');
-    leyenda.className = 'h6';
-    leyenda.textContent = 'Lote';
+    leyenda.className = 'lote-separador-venta';
+    leyenda.textContent = 'LOTE Y PRECIO COMPRA';
     lote.append(leyenda);
     const numero = ++siguienteLote;
-    const indicador = document.createElement('span');
-    indicador.className = 'lote-indicador';
-    indicador.textContent = `LOTE #${numero}`;
     for (const [campo, titulo, tipo] of [
         ['nombre_medicamento', 'Nombre del medicamento', 'text'], ['numero_lote', 'Número de lote', 'text'],
         ['id_medicamento', '', 'hidden'], ['laboratorio', '', 'hidden'],
-        ['presentacion_ingreso', 'Tipo de empaque que ingresa', 'select'],
+        ['tipo_medicamento', 'Tipo de medicamento', 'select'],
+        ['modalidad_venta', 'Restricción de venta', 'select'],
+        ['presentacion_ingreso', '', 'hidden'],
         ['contenido_caja', 'Contenido de la caja', 'select'],
         ['cantidad', 'Cantidad de empaques a ingresar', 'number'],
         ['paquetes_por_caja', 'Blísteres por caja', 'number'],
         ['unidades_por_blister', 'Pastillas por blíster', 'number'],
         ['precio', 'Precio de compra por caja contenedora', 'number'],
+        ['precio_compra_contenido', 'Precio de compra por blíster (L)', 'number'],
+        ['precio_compra_unidad', 'Precio de compra por unidad (L)', 'number'],
         ['precio_venta', 'Precio de venta unitario (L)', 'number'],
         ['precio_venta_contenido', 'Precio de venta por blíster (L)', 'number'],
         ['precio_venta_unidad', 'Precio de venta por unidad (L)', 'number'],
@@ -129,15 +130,15 @@ function agregarLote() {
         input.required = tipo !== 'hidden' && campo !== 'numero_lote';
         if (tipo === 'select') {
                 input.add(new Option('Seleccioná...', ''));
-                const opciones = campo === 'contenido_caja' ? ['Blister', 'Suero'] : ['Caja', 'Frasco', 'Ampolla', 'Suero', 'Sueros por caja'];
-                const etiquetas = { Caja: 'Caja de pastillas', Suero: campo === 'contenido_caja' ? 'Suero' : 'Suero unitario', Blister: 'Blíster' };
+                const opciones = campo === 'tipo_medicamento' ? ['Pastilla', 'Frasco', 'Ampolla', 'Suero'] : campo === 'modalidad_venta' ? ['Caja', 'Caja y unidad'] : ['Blister', 'Suero'];
+                const etiquetas = { Blister: 'Blíster' };
                 for (const opcion of opciones) input.add(new Option(etiquetas[opcion] || opcion, opcion));
         } else input.type = tipo;
         if (tipo === 'hidden') grupo.hidden = true;
         if (campo === 'numero_lote') { input.maxLength = 50; input.placeholder = 'Escribí el lote o dejá vacío para generarlo'; }
         if (campo === 'nombre_medicamento') { input.maxLength = 150; input.autocomplete = 'off'; }
         if (['paquetes_por_caja', 'unidades_por_blister'].includes(campo)) { input.min = 1; input.step = 1; input.max = 2147483647; }
-        if (campo.startsWith('precio_venta')) { input.min = '0.01'; input.step = '0.01'; input.max = '99999999.99'; }
+        if (campo.startsWith('precio_venta') || campo.startsWith('precio_compra')) { input.min = '0.01'; input.step = '0.01'; input.max = '99999999.99'; }
         if (campo === 'cantidad') { input.min = 1; input.step = 1; input.max = 2147483647; }
         if (campo === 'precio') { input.min = 0; input.step = '0.01'; input.max = '99999999.99'; }
         grupo.append(label, input);
@@ -166,39 +167,43 @@ function agregarLote() {
     notaPrecios.textContent = 'Completá los precios de las presentaciones que venderás; para cajas, ingresá al menos uno.';
     lote.append(stock, unidadesTotal, total, notaPrecios);
     const ajustarEmpaque = () => {
-        const caja = campo('presentacion_ingreso').value === 'Caja';
-        const sueros = campo('presentacion_ingreso').value === 'Sueros por caja';
-        campo('contenido_caja').value = caja ? 'Blister' : sueros ? 'Suero' : '';
+        const pastilla = campo('tipo_medicamento').value === 'Pastilla';
+        const individual = campo('modalidad_venta').value === 'Caja y unidad';
+        campo('presentacion_ingreso').value = 'Caja';
         campo('contenido_caja').parentElement.hidden = true;
-        campo('contenido_caja').disabled = !caja && !sueros;
+        campo('contenido_caja').disabled = true;
         campo('contenido_caja').required = false;
-        for (const nombre of ['contenido_caja', 'paquetes_por_caja', 'unidades_por_blister', 'precio_venta_contenido', 'precio_venta_unidad']) {
-            if (nombre === 'contenido_caja') continue;
-            const visible = nombre === 'paquetes_por_caja' ? caja || sueros
-                : nombre === 'precio_venta_contenido' ? caja || sueros : caja;
-            campo(nombre).parentElement.hidden = !visible;
-            campo(nombre).disabled = !visible;
-            campo(nombre).required = visible && !nombre.startsWith('precio_venta');
+        for (const nombre of ['paquetes_por_caja', 'unidades_por_blister', 'precio_compra_contenido', 'precio_compra_unidad', 'precio_venta_contenido', 'precio_venta_unidad']) {
+            const visible = nombre === 'paquetes_por_caja' ? !pastilla || individual : (nombre === 'unidades_por_blister' ? pastilla && individual
+                : nombre.endsWith('_contenido') ? pastilla && individual : individual);
+            const input = campo(nombre);
+            input.parentElement.hidden = !visible;
+            input.disabled = !visible;
+            input.required = visible;
+            if (!visible) input.value = '';
         }
-        campo('precio_venta').required = !caja && !sueros;
-        campo('precio_venta').previousElementSibling.textContent = caja || sueros ? 'Precio de venta por caja (L)' : 'Precio de venta unitario (L)';
-        campo('precio').previousElementSibling.textContent = caja ? 'Precio de compra de la caja contenedora (L)' : sueros ? 'Precio de compra de la caja (L)' : 'Precio de compra unitario (L)';
-        campo('precio_venta_unidad').previousElementSibling.textContent = 'Precio de venta por pastilla (L)';
-        campo('paquetes_por_caja').previousElementSibling.textContent = caja ? 'Cantidad de blísteres por caja' : 'Cantidad de sueros por caja';
-        campo('precio_venta_contenido').previousElementSibling.textContent = caja ? 'Precio de venta por blíster (L)' : 'Precio de venta unitario (L)';
-        campo('cantidad').previousElementSibling.textContent = caja
-            ? 'Cantidad de cajas contenedoras' : sueros ? 'Cantidad de cajas'
-            : (['Frasco', 'Suero', 'Ampolla'].includes(campo('presentacion_ingreso').value) ? 'Cantidad de unidades' : 'Cantidad de empaques a ingresar');
-        unidadesTotal.hidden = !caja && !sueros;
+        campo('precio_venta').required = true;
+        campo('precio_venta').previousElementSibling.textContent = 'Precio de venta por caja (L)';
+        campo('precio').previousElementSibling.textContent = 'Precio de compra por caja (L)';
+        campo('precio_compra_unidad').previousElementSibling.textContent = pastilla ? 'Precio de compra por pastilla (L)' : 'Precio de compra unitario (L)';
+        campo('precio_venta_unidad').previousElementSibling.textContent = pastilla ? 'Precio de venta por pastilla (L)' : 'Precio de venta unitario (L)';
+        campo('paquetes_por_caja').previousElementSibling.textContent = pastilla ? 'Blísteres por caja' : 'Unidades por caja';
+        campo('cantidad').previousElementSibling.textContent = 'Cantidad de cajas que ingresan';
+        notaPrecios.textContent = 'Completá los precios de todas las presentaciones habilitadas.';
+        unidadesTotal.hidden = !individual;
         if (lote.isConnected) actualizarTotales();
     };
     campo('presentacion_ingreso').addEventListener('change', ajustarEmpaque);
-    campo('contenido_caja').addEventListener('change', ajustarEmpaque);
+    campo('tipo_medicamento').addEventListener('change', () => {
+        for (const nombre of ['paquetes_por_caja', 'unidades_por_blister', 'precio_compra_contenido', 'precio_compra_unidad', 'precio_venta_contenido', 'precio_venta_unidad']) campo(nombre).value = '';
+        ajustarEmpaque();
+    });
+    campo('modalidad_venta').addEventListener('change', ajustarEmpaque);
     campo('id_medicamento').addEventListener('change', () => {
         const medicamento = catalogoMedicamentos.find(m => String(m.id_medicamento) === campo('id_medicamento').value);
         campo('laboratorio').value = form.elements.id_distribuidor.value.trim();
-        stock.textContent = medicamento ? `Stock actual: ${medicamento.stock_total || 0} unidades` : '';
-        campo('precio_venta').value = Number(medicamento?.precio_venta) > 0 ? medicamento.precio_venta : '';
+        stock.textContent = '';
+        for (const nombre of ['tipo_medicamento', 'modalidad_venta', 'precio', 'precio_compra_contenido', 'precio_compra_unidad', 'precio_venta', 'precio_venta_contenido', 'precio_venta_unidad', 'cantidad']) campo(nombre).value = '';
         campo('presentacion_ingreso').value = ['Caja', 'Frasco', 'Ampolla', 'Suero', 'Sueros por caja'].includes(medicamento?.forma_venta) ? medicamento.forma_venta : '';
         for (const nombre of ['contenido_caja', 'paquetes_por_caja', 'unidades_por_blister', 'precio_venta_contenido', 'precio_venta_unidad']) campo(nombre).value = '';
         ajustarEmpaque();
@@ -211,8 +216,6 @@ function agregarLote() {
     detalle.id = `detalle-lote-${numero}`;
     detalle.dataset.detalleLote = '';
     detalle.append(...[...lote.children].filter(elemento => elemento !== leyenda));
-    leyenda.replaceChildren(indicador);
-    indicador.textContent = 'Lote actual';
     const limpiarLoteActual = () => {
         loteEnEdicion = null;
         for (const input of lote.querySelectorAll('[data-campo]')) {
@@ -234,7 +237,8 @@ function agregarLote() {
         campo('nombre_medicamento').value = seleccionado.nombre;
         campo('id_medicamento').value = seleccionado.datos.id_medicamento;
         campo('id_medicamento').dispatchEvent(new Event('change'));
-        campo('presentacion_ingreso').value = seleccionado.datos.presentacion_ingreso;
+        campo('tipo_medicamento').value = seleccionado.datos.tipo_medicamento;
+        campo('modalidad_venta').value = seleccionado.datos.modalidad_venta;
         ajustarEmpaque();
         for (const [nombre, valor] of Object.entries(seleccionado.datos)) {
             const input = campo(nombre);
@@ -614,6 +618,14 @@ async function cargar() {
     siguienteFactura = datos.siguienteFactura || `FAC#${Math.max(0, ...datos.compras.map(compra => Number(compra.id_compra) || 0)) + 1}`;
     crearFormulario(datos.config, datos.proveedores);
 }
+window.addEventListener('lote-actualizado', async () => {
+    try {
+        const datos = await solicitar(window.farmacia.cargarCompras());
+        comprasRegistradas = datos.compras;
+        catalogoMedicamentos = datos.medicamentos;
+        window.inventarioCompras?.actualizar(comprasRegistradas, verLotes);
+    } catch (error) { mensaje(`El lote se guardó. No se pudo actualizar el historial: ${error.message}`, true); }
+});
 form.addEventListener('submit', async (evento) => {
     evento.preventDefault();
     if (guardar.disabled) return;

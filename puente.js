@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('farmacia', {
     eliminarProveedor: id => solicitarProveedor('eliminar', id),
     guardarCompra: (datos) => ipcRenderer.invoke('compras:guardar', datos),
     listarLotesCompra: (id) => ipcRenderer.invoke('compras:lotes', id),
+    editarLoteCompra: datos => ipcRenderer.invoke('compras:editarLote', datos),
     registrarMedicamento: (datos) =>
         ipcRenderer.invoke('compras:registrarMedicamento', datos),
 
@@ -48,4 +49,5 @@ contextBridge.exposeInMainWorld('farmacia', {
     resumenVentas: () => ipcRenderer.invoke('ventas:resumen'),
     guardarVenta: (datos) => ipcRenderer.invoke('ventas:guardar', datos),
     obtenerFactura: (id) => ipcRenderer.invoke('ventas:factura', id),
+    reporteVentas: (rango) => ipcRenderer.invoke('ventas:reporte', rango),
 });

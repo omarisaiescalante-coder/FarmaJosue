@@ -15,12 +15,44 @@
 .inventario-acordeon { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .25s ease, visibility .25s; }
 .inventario-acordeon.abierto { grid-template-rows: 1fr; visibility: visible; }
 .inventario-acordeon > div { min-height: 0; overflow: hidden; }
-.inventario-medicamentos { margin: .75rem; padding: 1rem; background: #e8f3f8; border-left: 4px solid #24799b; border-radius: 12px; }
+.inventario-medicamentos { margin: .75rem; padding: 1rem; background: linear-gradient(110deg, #dce9ff, #f3f7ff); border-left: 4px solid #2459a6; border-radius: 12px; }
 .inventario-medicamentos h3 { font-size: 1rem; color: #15516c; margin: 0 0 .75rem; }
 .inventario-medicamentos table { font-size: .85rem; background: white; }
 .inventario-medicamentos thead { background: #d3e8f2; color: #15516c; }
 .inventario-estado { padding: 2rem; text-align: center; }
 .inventario-existencias { margin: .75rem 0 0; color: #15516c; }
+.inventario-tarjetero { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); align-items: start; gap: 12px; }
+.inventario-lote-card { min-width: 0; padding: 14px; border: 1px solid #d6e0f0; border-left: 4px solid #2f5fd0; border-radius: 12px; background: #fff; color: #15305a; }
+.inventario-lote-card h3 { margin: 0 0 4px; font-size: 1rem; overflow-wrap: anywhere; }
+.inventario-card-numero { color: #6a7d9c; margin: 0 0 12px; font-size: .8rem; overflow-wrap: anywhere; }
+.inventario-card-datos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 5px 10px; margin-bottom: 0; font-size: .8rem; line-height: 1.4; }
+.inventario-card-datos dt { color: #6a7d9c; font-weight: 600; }
+.inventario-card-datos dd { margin: 0; overflow-wrap: anywhere; }
+.inventario-lote-card h4 { font-size: .82rem; margin: 12px 0 8px; }
+.inventario-card-precios { display: grid; gap: 5px; }
+.inventario-card-precios > div { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 7px 8px; background: #eaf0fd; border-radius: 6px; font-size: .78rem; color: #2349a8; }
+.inventario-card-precios strong { margin-right: auto; }
+.inventario-card-total { margin: 10px 0 0; font-weight: 700; font-size: .82rem; }
+.inventario-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 10px; }
+.inventario-editor-campo { display: flex; flex-direction: column; gap: 4px; min-width: 0; margin: 0; font-size: .75rem; color: #6a7d9c; }
+.inventario-editor-campo[hidden] { display: none; }
+.inventario-editor-campo:has([name="nombre"]), .inventario-editor-campo:has([name="razon_edicion"]), .inventario-editor-campo:has([name="fecha_edicion"]) { grid-column: 1 / -1; }
+body[data-module="compras"] .inventario-editor .form-control, body[data-module="compras"] .inventario-editor .form-select { width: 100%; min-height: 32px; padding: 5px 7px; font-size: .8rem; border: 1px solid #c9d8eb; border-radius: 6px; color: #15305a; }
+.inventario-editor .form-control[readonly], .inventario-editor .form-select:disabled { background: #f5f8fc; opacity: 1; color: #3d5278; }
+body[data-module="compras"] .inventario-editor select[name="fecha_edicion"] { padding-right: 28px; }
+.inventario-editor-acciones { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.inventario-editor-mensaje { grid-column: 1 / -1; margin: 0; font-size: .8rem; color: #a52a2a; }
+.inventario-medicamentos .inventario-tarjetero { grid-template-columns: minmax(0, 1fr); }
+.inventario-medicamentos .inventario-editor { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: end; }
+.inventario-medicamentos .inventario-editor-campo:has([name="nombre"]),
+.inventario-medicamentos .inventario-editor-campo:has([name="razon_edicion"]) { grid-column: span 2; }
+.inventario-medicamentos .inventario-editor-campo:has([name="fecha_edicion"]) { grid-column: auto; }
+@media (max-width: 600px) {
+    .inventario-medicamentos .inventario-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .inventario-medicamentos .inventario-editor-campo:has([name="nombre"]),
+    .inventario-medicamentos .inventario-editor-campo:has([name="razon_edicion"]),
+    .inventario-medicamentos .inventario-editor-campo:has([name="fecha_edicion"]) { grid-column: 1 / -1; }
+}
 @media (prefers-reduced-motion: reduce) { .inventario-acordeon { transition: none; } }
 @media (max-width: 600px) { .inventario-cabecera, .inventario-pie, .inventario-contenido { padding: 1rem; } .inventario-tabla { min-width: 760px; } }
 
@@ -28,8 +60,8 @@
 .compras-barra-superior { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: .75rem; }
 .compras-barra-superior h1 { margin: 0; }
 .compras-accesos { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; margin-left: auto; }
-.inventario-tabla .inventario-lote-destacado > td { background: #dcf3e7; border-bottom-color: #90c9ac; }
-.inventario-tabla .inventario-lote-destacado > td:first-child { box-shadow: inset 4px 0 #198754; font-weight: 700; }
+.inventario-tabla .inventario-lote-destacado > td { background: #e6efff; border-bottom-color: #a7bfe5; }
+.inventario-tabla .inventario-lote-destacado > td:first-child { box-shadow: inset 4px 0 #2459a6; font-weight: 700; }
 #vistaInventarioCompras[hidden], #vistaRegistroCompras[hidden] { display: none !important; }
 @media (max-width: 600px) { .compras-accesos { width: 100%; } .compras-accesos button { flex: 1 1 100%; } }
 

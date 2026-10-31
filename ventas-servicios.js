@@ -5,7 +5,10 @@ const C = require('./calculos-venta');
 async function cargar(db, usuario) {
     await autorizar(db, usuario, 'ventas');
     const [medicamentos] = await db.execute("SELECT id_medicamento, codigo, nombre, restriccion, stock_total, estado, aplica_isv FROM medicamentos WHERE estado = 'Disponible' ORDER BY nombre");
-    const [presentaciones] = await db.execute('SELECT * FROM medicamento_presentaciones');
+    const [presentaciones] = await db.execute(`SELECT p.*, l.numero_lote, l.cantidad_disponible FROM medicamento_presentaciones p
+        LEFT JOIN lote l ON l.id_lote = p.id_lote
+        WHERE (p.id_lote IS NULL AND EXISTS (SELECT 1 FROM lote n WHERE n.id_medicamento = p.id_medicamento AND n.tipo_medicamento IS NULL AND n.estado = 'Disponible' AND n.cantidad_disponible > 0 AND n.fecha_vencimiento >= CURDATE()))
+        OR (l.estado = 'Disponible' AND l.cantidad_disponible >= p.unidades_stock AND l.fecha_vencimiento >= CURDATE())`);
     return { medicamentos, presentaciones: presentaciones.filter(p => p.estado !== 'Inactiva') };
 }
 async function listar(db, usuario) {
@@ -105,7 +108,8 @@ async function guardar(db, usuario, datos) {
             let falta = l.unidades;
             const [lotes] = await conn.execute(`SELECT id_lote, cantidad_disponible FROM lote WHERE id_medicamento = ?
                 AND estado = 'Disponible' AND cantidad_disponible > 0 AND fecha_vencimiento >= CURDATE()
-                ORDER BY fecha_vencimiento, id_lote FOR UPDATE`, [l.id_medicamento]);
+                AND (? IS NULL OR id_lote = ?) AND (? IS NOT NULL OR tipo_medicamento IS NULL)
+                ORDER BY fecha_vencimiento, id_lote FOR UPDATE`, [l.id_medicamento, l.id_lote || null, l.id_lote || null, l.id_lote || null]);
             for (const lote of lotes) {
                 if (!falta) break;
                 const toma = Math.min(falta, lote.cantidad_disponible), quedan = lote.cantidad_disponible - toma;
@@ -122,6 +126,28 @@ async function guardar(db, usuario, datos) {
     } catch (error) { await conn.rollback(); throw error; }
     finally { conn.release(); }
 }
+async function reporte(db, usuario, datos) {
+    await autorizar(db, usuario, 'ventas');
+    const fecha = /^\d{4}-\d{2}-\d{2}$/;
+    const desde = String(datos?.desde || ''), hasta = String(datos?.hasta || '');
+    if (!fecha.test(desde) || !fecha.test(hasta) || Number.isNaN(Date.parse(desde)) || Number.isNaN(Date.parse(hasta))) throw new Error('Selecciona un rango de fechas válido.');
+    if (desde > hasta) throw new Error('La fecha inicial no puede ser posterior a la final.');
+    const siguiente = new Date(hasta + 'T00:00:00Z');
+    siguiente.setUTCDate(siguiente.getUTCDate() + 1);
+    const [filas] = await db.execute(`SELECT v.id_venta, v.numero_factura, c.dni AS dni_cliente,
+        CONCAT(u.nombre, ' ', u.apellido) AS vendedor, DATE_FORMAT(v.fecha_venta, '%Y-%m-%d %H:%i:%s') AS fecha_venta,
+        v.subtotal, v.descuento, v.impuesto, v.total, v.metodo_pago, v.estado
+        FROM ventas v LEFT JOIN clientes c ON c.id_cliente = v.id_cliente JOIN usuarios u ON u.id_usuario = v.id_usuario
+        WHERE v.fecha_venta >= ? AND v.fecha_venta < ? ORDER BY v.fecha_venta, v.id_venta`, [desde, siguiente.toISOString().slice(0, 10)]);
+    const completadas = filas.filter(f => f.estado === 'Completada');
+    const centavos = campo => completadas.reduce((suma, f) => suma + Math.round(Number(f[campo]) * 100), 0) / 100;
+    const porMetodo = {};
+    for (const f of completadas) porMetodo[f.metodo_pago] = Math.round(((porMetodo[f.metodo_pago] || 0) + Number(f.total)) * 100) / 100;
+    return { ventas: filas, resumen: {
+        cantidad: completadas.length, anuladas: filas.length - completadas.length,
+        subtotal: centavos('subtotal'), descuento: centavos('descuento'), impuesto: centavos('impuesto'), total: centavos('total'), porMetodo,
+    } };
+}
 async function factura(db, usuario, id) {
     await autorizar(db, usuario, 'ventas');
     if (!Number.isSafeInteger(id) || id < 1) throw new Error('Venta inválida.');
@@ -133,4 +159,4 @@ async function factura(db, usuario, id) {
         FROM detalles_venta d JOIN medicamentos m USING (id_medicamento) WHERE d.id_venta = ? ORDER BY d.id_detalle_venta`, [id]);
     return { venta, detalle };
 }
-module.exports = { cargar, listar, guardar, factura, resumen };
+module.exports = { cargar, listar, guardar, factura, resumen, reporte };

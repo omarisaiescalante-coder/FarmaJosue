@@ -1,8 +1,7 @@
 const { autorizar } = require('./sesion-servicio');
 
-// Si en medicamento_presentaciones tienes una columna con las unidades que trae cada empaque
-// (ej. Caja = 100, Blister = 10, Unidad = 1), escribe aquí su nombre. Si no existe, déjalo así.
-const CAMPO_EQUIVALENCIA = 'unidades_por_presentacion';
+// Equivalencia de cada presentación en las unidades internas del inventario.
+const CAMPO_EQUIVALENCIA = 'unidades_stock';
 
 // Devuelve cada medicamento con sus presentaciones (precios) y sus lotes, en una sola llamada.
 async function listar(db, sesion) {
@@ -10,14 +9,16 @@ async function listar(db, sesion) {
     const [meds] = await db.query(`SELECT id_medicamento, nombre, categoria, restriccion, stock_total, estado
         FROM medicamentos ORDER BY nombre`);
     const [pres] = await db.query('SELECT * FROM medicamento_presentaciones ORDER BY id_presentacion');
-    const [lotes] = await db.query(`SELECT id_medicamento, numero_lote,
+    const [lotes] = await db.query(`SELECT id_lote, id_medicamento, numero_lote, tipo_medicamento,
         DATE_FORMAT(fecha_vencimiento, '%Y-%m-%d') AS fecha_vencimiento, cantidad_disponible
         FROM lote ORDER BY fecha_vencimiento, id_lote`);
 
     const presPorMed = new Map(), lotesPorMed = new Map();
-    for (const p of pres) {
+    const medicamentosConLotesAnteriores = new Set(lotes.filter(l => !l.tipo_medicamento).map(l => l.id_medicamento));
+    for (const p of pres.filter(p => p.estado !== 'Inactiva' && (p.id_lote != null || medicamentosConLotesAnteriores.has(p.id_medicamento)))) {
         if (!presPorMed.has(p.id_medicamento)) presPorMed.set(p.id_medicamento, []);
         presPorMed.get(p.id_medicamento).push({
+            id_lote: p.id_lote,
             nombre: String(p.nombre_presentacion),
             precio: p.precio_venta == null ? null : Number(p.precio_venta),
             unidades: Number(p[CAMPO_EQUIVALENCIA]) || null
@@ -26,6 +27,7 @@ async function listar(db, sesion) {
     for (const l of lotes) {
         if (!lotesPorMed.has(l.id_medicamento)) lotesPorMed.set(l.id_medicamento, []);
         lotesPorMed.get(l.id_medicamento).push({
+            id_lote: l.id_lote,
             numero_lote: String(l.numero_lote),
             fecha_vencimiento: l.fecha_vencimiento,
             cantidad: Number(l.cantidad_disponible) || 0

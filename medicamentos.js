@@ -44,12 +44,13 @@ function textoTiempo(r) {
 function htmlPrecios(pres) {
     const conPrecio = pres.filter(p => p.precio != null);
     if (!conPrecio.length) return '<span class="med-sin">Sin precios registrados</span>';
-    if (pres.length === 1) return `<span class="med-precio">${dinero(conPrecio[0].precio)}<small>c/u</small></span>`;
+    if (pres.length === 1) return `<span class="med-precio">${dinero(conPrecio[0].precio)}<small>${escapar(nombrePres(conPrecio[0].nombre))}</small></span>`;
     return conPrecio.map(p => `<span class="med-precio">${dinero(p.precio)}<small>${escapar(nombrePres(p.nombre))}</small></span>`).join('');
 }
 
 // Convierte la cantidad del lote en cajas / blísteres / unidades (solo si hay equivalencias registradas).
 function textoStock(cantidad, pres) {
+    if (pres.length === 1 && pres[0].nombre === 'Caja') return plural(Math.floor(cantidad / pres[0].unidades), 'caja', 'cajas');
     const mayores = pres.filter(p => p.unidades > 1).sort((a, b) => b.unidades - a.unidades);
     const minima = pres.find(p => !(p.unidades > 1));
     const nombreMin = minima ? minima.nombre : 'unidad';
@@ -67,11 +68,14 @@ function textoStock(cantidad, pres) {
 function htmlLotes(m) {
     if (!m.lotes.length) return '<p class="med-sin">No hay lotes registrados.</p>';
     return m.lotes.map(l => {
+        const presentaciones = m.presentaciones.filter(p => p.id_lote === l.id_lote ||
+            (p.id_lote == null && !m.presentaciones.some(n => n.id_lote === l.id_lote)));
         const r = restante(l.fecha_vencimiento);
         const clase = r.vencido ? 'tiempo-vencido' : (r.dias <= 90 ? 'tiempo-pronto' : 'tiempo-ok');
         return `<div class="med-lote${r.vencido ? ' lote-vencido' : ''}">
             <div class="med-lote-fila"><strong>Lote ${escapar(l.numero_lote)}</strong><span class="tiempo ${clase}">${escapar(textoTiempo(r))}</span></div>
-            <div class="med-stock">${escapar(textoStock(l.cantidad, m.presentaciones))}</div>
+            <div class="med-stock">${escapar(textoStock(l.cantidad, presentaciones))}</div>
+            <div class="med-precios">${htmlPrecios(presentaciones)}</div>
         </div>`;
     }).join('');
 }
