@@ -2,6 +2,7 @@
 
 async function migrar(db) {
     const columnas = {
+        cajas_por_paquete: 'INT NULL', blisteres_por_paquete: 'INT NULL', unidades_por_paquete: 'INT NULL',
         nombre_medicamento: 'VARCHAR(150) NULL', razon_edicion: 'VARCHAR(500) NULL',
         fecha_edicion: 'DATETIME NULL', revision: 'INT NOT NULL DEFAULT 0',
         tipo_medicamento: 'VARCHAR(20) NULL', modalidad_venta: 'VARCHAR(20) NULL',

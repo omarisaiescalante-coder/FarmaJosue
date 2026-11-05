@@ -9,7 +9,7 @@ async function listar(db, sesion) {
     const [meds] = await db.query(`SELECT id_medicamento, nombre, categoria, restriccion, stock_total, estado
         FROM medicamentos ORDER BY nombre`);
     const [pres] = await db.query('SELECT * FROM medicamento_presentaciones ORDER BY id_presentacion');
-    const [lotes] = await db.query(`SELECT id_lote, id_medicamento, numero_lote, tipo_medicamento,
+    const [lotes] = await db.query(`SELECT id_lote, id_medicamento, numero_lote, tipo_medicamento, contenido_caja, paquetes_por_caja, unidades_por_blister,
         DATE_FORMAT(fecha_vencimiento, '%Y-%m-%d') AS fecha_vencimiento, cantidad_disponible
         FROM lote ORDER BY fecha_vencimiento, id_lote`);
 
@@ -29,6 +29,8 @@ async function listar(db, sesion) {
         lotesPorMed.get(l.id_medicamento).push({
             id_lote: l.id_lote,
             numero_lote: String(l.numero_lote),
+            tipo_medicamento: l.tipo_medicamento, contenido_caja: l.contenido_caja,
+            paquetes_por_caja: l.paquetes_por_caja, unidades_por_blister: l.unidades_por_blister,
             fecha_vencimiento: l.fecha_vencimiento,
             cantidad: Number(l.cantidad_disponible) || 0
         });

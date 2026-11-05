@@ -1,0 +1,40 @@
+.reporte-compras-modal { box-sizing: border-box; width: min(1140px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); margin: auto; padding: 28px; border: 1px solid #d7e0ec; border-radius: 14px; background: #fff; color: #203b56; overflow: auto; box-shadow: 0 24px 80px #10294455; }
+.reporte-compras-modal::backdrop { background: #14283c99; }
+.reporte-compras-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.reporte-compras-cabecera h2 { margin: 0; font-size: 22px; }
+.reporte-compras-filtros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: end; margin: 24px 0; }
+.reporte-compras-filtros label { margin: 0; min-width: 0; }
+.reporte-compras-filtros input { display: block; width: 100%; min-width: 0; box-sizing: border-box; margin-top: 8px; }
+.reporte-compras-filtros select { display: block; width: 100%; min-width: 0; box-sizing: border-box; margin-top: 8px; min-height: 46px; }
+.reporte-compras-modal button { min-height: 44px; }
+.reporte-compras-titulo { text-align: center; margin: 28px 0; }
+.reporte-compras-titulo h2 { font-size: 24px; margin: 10px 0; }
+.reporte-compras-titulo p { margin: 6px 0; }
+.reporte-compras-bloque { margin: 0 0 24px; }
+.reporte-compras-bloque h3 { margin: 0; padding: 12px; background: #d6e0ed; color: #203b56; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.reporte-compras-tabla-contenedor { overflow-x: auto; }
+.reporte-compras-modal table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 13px; }
+.reporte-compras-bloque table { min-width: 800px; }
+.reporte-compras-modal th, .reporte-compras-modal td { border: 1px solid #ccd6e3; padding: 11px 10px; vertical-align: top; overflow-wrap: anywhere; }
+.reporte-compras-modal thead th { background: #315d8e; color: white; text-align: left; }
+.reporte-compras-modal tbody tr:nth-child(even) { background: #f2f5f9; }
+.reporte-compras-numero { text-align: right; font-variant-numeric: tabular-nums; }
+.reporte-compras-modal tfoot th, .reporte-compras-modal tfoot td { background: #e6edf5; font-weight: 700; }
+.reporte-compras-modal .reporte-compras-total { background: #203f64; color: #fff; font-size: 16px; }
+.reporte-compras-total th { text-align: left; width: 76%; }
+.reporte-compras-solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 760px) { .reporte-compras-modal { padding: 18px; } .reporte-compras-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media print {
+    @page { size: A4 landscape; margin: 12mm; }
+    body.imprimiendo-reporte-compras > :not(.reporte-compras-modal) { display: none !important; }
+    body.imprimiendo-reporte-compras { background: white !important; margin: 0; padding: 0; }
+    body.imprimiendo-reporte-compras .reporte-compras-modal { display: block !important; position: static; width: 100%; max-width: none; height: auto; max-height: none; overflow: visible; border: 0; border-radius: 0; padding: 0; margin: 0; box-shadow: none; color: #182c40; }
+    .imprimiendo-reporte-compras .reporte-compras-controles { display: none; }
+    .imprimiendo-reporte-compras .reporte-compras-tabla-contenedor { overflow: visible; }
+    .imprimiendo-reporte-compras table { min-width: 0; font-size: 10pt; }
+    .imprimiendo-reporte-compras thead { display: table-header-group; }
+    .imprimiendo-reporte-compras tfoot { display: table-row-group; }
+    .imprimiendo-reporte-compras tr, .imprimiendo-reporte-compras .reporte-compras-total { break-inside: avoid; }
+    .imprimiendo-reporte-compras h3 { break-after: avoid; }
+    .imprimiendo-reporte-compras * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

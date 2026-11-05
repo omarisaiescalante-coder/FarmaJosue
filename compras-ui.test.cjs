@@ -31,6 +31,7 @@ app.whenReady().then(async () => {
                 guardarCompra: async datos => { window.ultimaCompra = datos; return { error: 'Error simulado para revisar la recuperación del formulario' }; }
             }; void 0;`);
         await ventana.webContents.executeJavaScript(fs.readFileSync(path.join(__dirname, 'proveedores-ui.js'), 'utf8'));
+        await ventana.webContents.executeJavaScript(fs.readFileSync('equivalencias-lote.js', 'utf8'));
         await ventana.webContents.executeJavaScript(fs.readFileSync(path.join(__dirname, 'tabla.js'), 'utf8'));
         const resultado = await ventana.webContents.executeJavaScript(`(async () => {
             const assert = (valor, texto) => { if (!valor) throw new Error(texto); };
@@ -59,7 +60,16 @@ app.whenReady().then(async () => {
             assert(document.querySelectorAll('[data-lote]').length === 1, 'No abre el primer lote automáticamente');
             const lote = document.querySelector('[data-lote]');
             const campo = nombre => lote.querySelector('[data-campo="' + nombre + '"]');
-            const cambiar = (nombre, valor) => { campo(nombre).value = valor; campo(nombre).dispatchEvent(new Event('change')); };
+            const cambiar = (nombre, valor) => {
+                if (nombre === 'modalidad_venta' || nombre.startsWith('precio_compra_')) return;
+                if (nombre.startsWith('precio_venta')) {
+                    const forma = nombre === 'precio_venta' ? 'Caja' : 'Unidad';
+                    let fila = [...lote.querySelectorAll('[data-forma-venta]')].find(f => f.querySelector('select').value === forma);
+                    if (!fila) { [...lote.querySelectorAll('button')].find(b => b.textContent.includes('+ Otra')).click(); fila = [...lote.querySelectorAll('[data-forma-venta]')].at(-1); fila.querySelector('select').value = forma; fila.querySelector('select').dispatchEvent(new Event('change')); }
+                    fila.querySelector('input').value = valor; fila.querySelector('[data-equivalencia]').value = forma === 'Caja' ? 1 : (campo('unidades_por_paquete').value || 10); fila.querySelector('[data-equivalencia]').dispatchEvent(new Event('input', {bubbles: true})); return;
+                }
+                campo(nombre).value = valor; campo(nombre).dispatchEvent(new Event('change'));
+            };
             assert(!lote.disabled, 'Lote bloqueado');
             assert([...lote.querySelectorAll('input')].every(i => !i.readOnly), 'Hay campos de lote de solo lectura');
             assert([...campo('tipo_medicamento').options].map(o => o.value).filter(Boolean).join(',') === 'Pastilla,Frasco,Ampolla,Suero', 'Empaques incorrectos');
@@ -77,27 +87,11 @@ app.whenReady().then(async () => {
             cambiar('nombre_medicamento', 'Existente');
             assert(campo('id_medicamento').value === '1', 'No encuentra medicamento existente');
             assert(campo('laboratorio').value === 'Laboratorio de prueba' && campo('laboratorio').type === 'hidden', 'Laboratorio del lote incorrecto');
-            for (const tipo of ['Pastilla', 'Frasco', 'Ampolla', 'Suero']) {
-                cambiar('tipo_medicamento', tipo);
-                cambiar('modalidad_venta', 'Caja y unidad');
-                assert(!campo('precio_compra_unidad').disabled && !campo('precio_venta_unidad').disabled, 'Falta precio individual');
-                assert(campo('precio_venta_contenido').disabled === (tipo !== 'Pastilla'), 'Precio blister incorrecto');
-                assert(campo('unidades_por_blister').disabled === (tipo !== 'Pastilla'), 'Equivalencia incorrecta');
-                campo('precio_compra_unidad').value = '4'; campo('precio_venta_unidad').value = '8';
-                cambiar('modalidad_venta', 'Caja');
-                if (tipo === 'Pastilla') {
-                    assert(campo('paquetes_por_caja').disabled && campo('paquetes_por_caja').parentElement.hidden, 'Pide blisteres para caja');
-                    assert(campo('unidades_por_blister').disabled && campo('unidades_por_blister').parentElement.hidden, 'Pide pastillas para caja');
-                    assert(!campo('paquetes_por_caja').value && !campo('unidades_por_blister').value, 'Conserva equivalencias incompatibles');
-                }
-                assert(campo('precio_compra_unidad').parentElement.hidden && campo('precio_venta_unidad').disabled, 'Muestra unidades en Caja');
-                assert(!campo('precio_compra_unidad').value && !campo('precio_venta_unidad').value, 'Conserva precios incompatibles');
-            }
             cambiar('nombre_medicamento', 'Nuevo medicamento');
             const panel = lote.querySelector('fieldset');
             const modal = lote.querySelector('dialog');
-            assert(modal.open && panel.disabled, 'No muestra confirmación flotante antes del registro');
-            const aceptar = [...modal.querySelectorAll('button')].find(b => b.textContent === 'Continuar');
+            assert(!modal.open && panel.disabled, 'No muestra confirmación flotante antes del registro');
+            const aceptar = lote.querySelector('.btn-warning');
             assert(!aceptar.hidden, 'No ofrece registrar el medicamento');
             aceptar.click();
             assert(modal.open && !panel.hidden && !panel.disabled, 'No abre ventana de registro al confirmar');
@@ -173,23 +167,43 @@ app.whenReady().then(async () => {
             nombreSegundo.value = 'Otro nuevo'; nombreSegundo.dispatchEvent(new Event('input'));
             assert(!segundo.querySelector('dialog').open, 'Interrumpe mientras escribe el nombre');
             nombreSegundo.dispatchEvent(new Event('change'));
-            assert(segundo.querySelector('dialog').open, 'No muestra aviso flotante en segundo lote');
+            assert(!segundo.querySelector('dialog').open, 'Abre modal automaticamente');
+            segundo.querySelector('.btn-warning').click();
             [...segundo.querySelectorAll('dialog button')].find(b => b.textContent === 'Cancelar' && !b.hidden).click();
             assert(!segundo.querySelector('dialog').open && nombreSegundo.value === 'Otro nuevo', 'Cancelar aviso pierde el nombre');
             nombreSegundo.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-            [...segundo.querySelectorAll('button')].find(b => b.textContent === 'Continuar').click();
+            segundo.querySelector('.btn-warning').click();
             assert(segundo.querySelector('dialog').open, 'No abre registro en segundo lote');
             [...segundo.querySelectorAll('fieldset button')].find(b => b.textContent === 'Cancelar').click();
             assert(!segundo.querySelector('dialog').open, 'No cierra el registro cancelado');
             segundo.dispatchEvent(new Event('limpiar-lote'));
             assert(!campo('nombre_medicamento').value && form.elements.total.value === '100.00', 'Cancelar altera los lotes guardados');
+            const confirmarResumen = async () => {
+                await new Promise(r => setTimeout(r, 20));
+                const resumen = document.querySelector('.compra-confirmacion');
+                assert(resumen && resumen.open, 'Abre resumen antes de guardar');
+                assert(resumen.querySelector('tbody').textContent.includes('LOTE-MANUAL') && resumen.querySelector('tfoot').textContent.includes('100.00') || resumen.querySelector('tfoot').textContent.includes('130.00'), 'Resumen de lotes e importe');
+                const anterior = window.ultimaCompra;
+                const aceptar = resumen.querySelector('[data-aceptar-compra]');
+                aceptar.click();
+                assert(resumen.textContent.includes('Seguro desea guardar esta compra') && window.ultimaCompra === anterior, 'Pide confirmacion sin guardar todavia');
+                aceptar.click();
+            };
+            // Cancelar el resumen conserva el borrador y no llama al servicio.
+            form.dispatchEvent(new Event('submit', {cancelable:true}));
+            await new Promise(r => setTimeout(r,20));
+            const cancelado = document.querySelector('.compra-confirmacion');
+            [...cancelado.querySelectorAll('button')].find(b => b.textContent === 'Volver a editar').click();
+            await new Promise(r => setTimeout(r,30));
+            assert(!window.ultimaCompra && lotesAgregados.length === 1 && !guardar.disabled, 'Cancelar resumen conserva lotes y no guarda');
             form.dispatchEvent(new Event('submit', { cancelable: true }));
+            await confirmarResumen();
             await new Promise(resolve => setTimeout(resolve, 20));
             assert(window.ultimaCompra.lotes[0].numero_lote === 'LOTE-MANUAL' && !window.ultimaCompra.lotes[0].numero_automatico, 'No envía número manual');
             assert(window.ultimaCompra.lotes.length === 1 && window.ultimaCompra.lotes[0].cantidad === '2', 'No env?a los datos conservados');
             assert(document.querySelectorAll('#lotesAgregados .compras-lote-compacto').length === 1 && form.elements.total.value === '100.00', 'Pierde los lotes tras el error');
             assert(!lote.disabled && !campo('cantidad').disabled && !campo('precio').disabled, 'Campos bloqueados tras error');
-            assert(panel.disabled && campo('unidades_por_blister').disabled, 'Campos ocultos activados tras error');
+            assert(panel.disabled && campo('unidades_por_blister').type === 'hidden', 'Campos ocultos activados tras error');
             document.querySelector('#lotesAgregados .compras-lote-compacto').click();
             assert(campo('cantidad').value === '2' && campo('numero_lote').value === 'LOTE-MANUAL', 'No permite editar un lote agregado');
             assert(form.elements.total.value === '100.00', 'Editar cuenta el lote dos veces');
@@ -215,10 +229,12 @@ app.whenReady().then(async () => {
             lote.querySelector('[data-guardar-lote]').click();
             assert(form.elements.total.value === '130.00', 'No suma los lotes a?adidos');
             form.dispatchEvent(new Event('submit', { cancelable: true }));
+            await confirmarResumen();
             await new Promise(resolve => setTimeout(resolve, 20));
             assert(window.ultimaCompra.lotes.length === 2 && window.ultimaCompra.lotes[1].numero_automatico, 'No conserva la numeraci?n autom?tica');
             window.farmacia.guardarCompra = async datos => ({ datos: { numero_factura: 'FAC#230' } });
             form.dispatchEvent(new Event('submit', { cancelable: true }));
+            await confirmarResumen();
             await new Promise(resolve => setTimeout(resolve, 30));
             assert(document.querySelectorAll('#lotesAgregados .compras-lote-compacto').length === 0, 'No limpia los lotes al guardar la compra: ' + document.getElementById('message').textContent + ' | guardar=' + guardar.disabled + ' | invalidos=' + [...form.elements].filter(e => e.willValidate && !e.validity.valid).map(e => e.id + ':' + e.validationMessage).join(','));
             assert(document.querySelectorAll('[data-lote]').length === 1 && form.elements.total.value === '0.00', 'No prepara la siguiente compra');

@@ -7,11 +7,12 @@ app.whenReady().then(async () => {
     try {
         await ventana.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`<button id="abrir">Inventario</button>
             <h1 id="pageTitle"></h1><p id="pageDescription"></p>
-            <button id="irInventarioCompras"></button><button id="regresarRegistroCompras"></button>
+            <button id="irInventarioCompras"></button><button id="verLotesRegistrados"></button>
             <section id="vistaRegistroCompras"><input id="borrador" value="Compra pendiente"></section>
             <section id="vistaInventarioCompras" hidden><h2 id="historialComprasTitulo" tabindex="-1"></h2></section>
             <section id="vistaInventarioLotes" hidden></section>`));
         await ventana.webContents.executeJavaScript(fs.readFileSync('inventario-compras.js', 'utf8'));
+        await ventana.webContents.executeJavaScript(fs.readFileSync('stock-empaques.js', 'utf8'));
         await ventana.webContents.executeJavaScript(fs.readFileSync('inventario-lotes.js', 'utf8'));
         await ventana.webContents.executeJavaScript(`(async () => {
             const assert = (v, texto) => { if (!v) throw new Error(texto); };
@@ -42,7 +43,7 @@ app.whenReady().then(async () => {
             assert(consultas.join(',') === '1', 'Consulta otras compras del mismo medicamento');
             assert(modal.querySelectorAll('.inventario-lote-card').length === 1, 'Mezcla lotes');
             const texto = modal.querySelector('.inventario-lote-card').textContent;
-            assert(texto.includes('SOLO-ESTE') && texto.includes('2 cajas') && !texto.includes('blísteres'), 'Stock de caja incorrecto');
+            assert(texto.includes('SOLO-ESTE') && texto.includes('Caja = 2') && texto.includes('Unidad = 2'), 'Stock de caja incorrecto');
             modal.close();
             await new Promise(r => setTimeout(r, 30));
             assert(document.activeElement.id === 'abrir', 'No devuelve foco');

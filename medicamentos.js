@@ -49,21 +49,6 @@ function htmlPrecios(pres) {
 }
 
 // Convierte la cantidad del lote en cajas / blísteres / unidades (solo si hay equivalencias registradas).
-function textoStock(cantidad, pres) {
-    if (pres.length === 1 && pres[0].nombre === 'Caja') return plural(Math.floor(cantidad / pres[0].unidades), 'caja', 'cajas');
-    const mayores = pres.filter(p => p.unidades > 1).sort((a, b) => b.unidades - a.unidades);
-    const minima = pres.find(p => !(p.unidades > 1));
-    const nombreMin = minima ? minima.nombre : 'unidad';
-    if (!mayores.length) return plural(cantidad, nombrePres(nombreMin), nombrePres(nombreMin, 2));
-    let resto = cantidad;
-    const partes = mayores.map(p => {
-        const n = Math.floor(resto / p.unidades);
-        resto -= n * p.unidades;
-        return plural(n, nombrePres(p.nombre), nombrePres(p.nombre, 2));
-    });
-    partes.push(plural(resto, nombrePres(nombreMin), nombrePres(nombreMin, 2)));
-    return partes.join(' · ');
-}
 
 function htmlLotes(m) {
     if (!m.lotes.length) return '<p class="med-sin">No hay lotes registrados.</p>';
@@ -74,7 +59,7 @@ function htmlLotes(m) {
         const clase = r.vencido ? 'tiempo-vencido' : (r.dias <= 90 ? 'tiempo-pronto' : 'tiempo-ok');
         return `<div class="med-lote${r.vencido ? ' lote-vencido' : ''}">
             <div class="med-lote-fila"><strong>Lote ${escapar(l.numero_lote)}</strong><span class="tiempo ${clase}">${escapar(textoTiempo(r))}</span></div>
-            <div class="med-stock">${escapar(textoStock(l.cantidad, presentaciones))}</div>
+            <div class="med-stock">${escapar(window.textoStockEmpaque(l, l.cantidad))}</div>
             <div class="med-precios">${htmlPrecios(presentaciones)}</div>
         </div>`;
     }).join('');

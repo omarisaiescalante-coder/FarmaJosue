@@ -21,7 +21,7 @@ async function cargar(db, sesion) {
     const [proveedores] = await db.query('SELECT id_distribuidor, nombre, telefono, correo FROM distribuidores ORDER BY nombre');
     const [medicamentos] = await db.query(`SELECT m.id_medicamento, m.codigo, m.nombre, m.laboratorio,
         m.categoria, m.restriccion, m.stock_total,
-        l.presentacion_ingreso AS forma_venta, l.precio_venta
+        l.presentacion_ingreso AS forma_venta, l.precio_venta, l.tipo_medicamento
         FROM medicamentos m LEFT JOIN lote l ON l.id_lote =
             (SELECT MAX(ultimo.id_lote) FROM lote ultimo WHERE ultimo.id_medicamento = m.id_medicamento)
         WHERE m.estado <> 'Inactivo' ORDER BY m.nombre`);
@@ -43,7 +43,8 @@ async function lotes(db, sesion, id) {
         ROUND(l.costo_total / NULLIF(l.cantidad_inicial, 0), 6) AS precio_compra,
         l.costo_total, l.estado, l.laboratorio, l.tipo_medicamento, l.modalidad_venta, l.precio_compra_contenido, l.precio_compra_unidad,
         l.presentacion_ingreso, l.contenido_caja, l.paquetes_por_caja, l.unidades_por_blister,
-        l.cantidad_empaques, l.precio_empaque, l.precio_venta, l.precio_venta_contenido, l.precio_venta_unidad
+        l.cantidad_empaques, l.precio_empaque, l.precio_venta, l.precio_venta_contenido, l.precio_venta_unidad,
+        l.cajas_por_paquete, l.blisteres_por_paquete, l.unidades_por_paquete
         FROM lote l JOIN medicamentos m USING (id_medicamento)
         WHERE l.id_compra = ? ORDER BY l.id_lote`, [id]);
     if (!filas.length) return filas;
@@ -150,13 +151,18 @@ async function guardar(db, sesion, datos) {
                     lote.fabricacion, lote.empaque.forma, lote.empaque.contenido, lote.empaque.paquetes,
                     lote.empaque.contenido === 'Blister' ? lote.empaque.unidades : null,
                     lote.cantidadEmpaques, lote.precioEmpaque,
-                    lote.empaque.precios.find(p => p.nombre === lote.empaque.forma)?.precio || null,
+                    lote.empaque.precios.find(p => p.nombre === (lote.empaque.contenidoPaquete ? 'Caja' : lote.empaque.forma))?.precio || null,
                     lote.empaque.precios.find(p => p.nombre === lote.empaque.contenido)?.precio || null,
                     lote.empaque.precios.find(p => ['Unidad', 'Pastilla'].includes(p.nombre))?.precio || null, lote.laboratorio, registro.insertId]);
                 if (lote.empaque.tipo) {
                     await conexion.execute(`UPDATE lote SET tipo_medicamento = ?, modalidad_venta = ?,
                         precio_compra_contenido = ?, precio_compra_unidad = ? WHERE id_lote = ?`,
                     [lote.empaque.tipo, lote.empaque.modalidad, lote.empaque.compras.contenido, lote.empaque.compras.unidad, registro.insertId]);
+                }
+                if (lote.empaque.contenidoPaquete) {
+                    const contenido = lote.empaque.contenidoPaquete;
+                    await conexion.execute('UPDATE lote SET cajas_por_paquete = ?, blisteres_por_paquete = ?, unidades_por_paquete = ? WHERE id_lote = ?',
+                        [contenido.cajas, contenido.blisteres, contenido.unidades, registro.insertId]);
                 }
                 for (const presentacion of lote.empaque.precios) {
                     if (!lote.empaque.tipo) {
@@ -237,18 +243,20 @@ async function editarLote(db, sesion, datos) {
         const [[med]] = await conn.execute('SELECT stock_total FROM medicamentos WHERE id_medicamento = ? FOR UPDATE', [referencia.id_medicamento]);
         const [[anterior]] = await conn.execute('SELECT * FROM lote WHERE id_lote = ? FOR UPDATE', [id]);
         if (Number(anterior.revision) !== revision) throw new Error('El lote cambió. Actualizá el inventario antes de editarlo.');
+        if (anterior.unidades_por_paquete && !empaque.contenidoPaquete) throw new Error('Este lote usa paquetes mayoristas. Conservá las cantidades por paquete al editarlo.');
         const consumido = Number(anterior.cantidad_inicial) - Number(anterior.cantidad_disponible);
-        const factorAnterior = Number(anterior.paquetes_por_caja || 1) * Number(anterior.unidades_por_blister || 1);
+        const factorCajaAnterior = Number(anterior.paquetes_por_caja || 1) * Number(anterior.unidades_por_blister || 1);
+        const factorAnterior = Number(anterior.unidades_por_paquete || factorCajaAnterior);
         // Los lotes anteriores de pastillas por caja pueden conservar equivalencias
         // internas aunque esos campos ya no se pidan en el formulario.
-        if (anterior.tipo_medicamento === 'Pastilla' && anterior.modalidad_venta === 'Caja' && empaque.tipo === 'Pastilla' && empaque.modalidad === 'Caja') {
+        if (!Array.isArray(datos.formas_venta) && anterior.tipo_medicamento === 'Pastilla' && anterior.modalidad_venta === 'Caja' && empaque.tipo === 'Pastilla' && empaque.modalidad === 'Caja') {
             empaque.paquetes = Number(anterior.paquetes_por_caja || 1);
             empaque.unidades = Number(anterior.unidades_por_blister || 1);
             empaque.factor = factorAnterior;
             empaque.precios[0].unidades = factorAnterior;
         }
         if (cantidad * empaque.factor > 2147483647) throw new Error('Revisá la cantidad de cajas.');
-        if (consumido && (factorAnterior !== empaque.factor || (anterior.tipo_medicamento && anterior.tipo_medicamento !== empaque.tipo)))
+        if (consumido && (factorAnterior !== empaque.factor || factorCajaAnterior !== (empaque.factorCaja ?? empaque.factor) || Number(anterior.unidades_por_blister || 1) !== empaque.unidades || (anterior.tipo_medicamento && anterior.tipo_medicamento !== empaque.tipo)))
             throw new Error('Este lote ya tiene salidas: conservá el tipo y las equivalencias para respetar las ventas realizadas.');
         const inicial = cantidad * empaque.factor, disponible = inicial - consumido;
         if (disponible < 0) throw new Error('La cantidad ingresada no puede ser menor que las existencias ya vendidas.');
@@ -266,7 +274,12 @@ async function editarLote(db, sesion, datos) {
             estado = CASE WHEN estado IN ('Disponible', 'Agotado') THEN IF(? > 0, 'Disponible', 'Agotado') ELSE estado END WHERE id_lote = ?`,
         [nombre, empaque.tipo, empaque.modalidad, empaque.contenido, empaque.paquetes, empaque.tipo === 'Pastilla' ? empaque.unidades : null,
             cantidad, inicial, disponible, Number(precio).toFixed(2), (total / 100).toFixed(2), empaque.compras.contenido, empaque.compras.unidad,
-            venta('Caja'), venta('Blister'), venta(empaque.tipo === 'Pastilla' ? 'Pastilla' : 'Unidad'), razon, disponible, id]);
+            venta('Caja'), venta('Blister'), venta('Unidad') || venta('Pastilla'), razon, disponible, id]);
+        if (empaque.contenidoPaquete) {
+            const contenido = empaque.contenidoPaquete;
+            await conn.execute("UPDATE lote SET presentacion_ingreso = 'Paquete', cajas_por_paquete = ?, blisteres_por_paquete = ?, unidades_por_paquete = ? WHERE id_lote = ?",
+                [contenido.cajas, contenido.blisteres, contenido.unidades, id]);
+        }
         await conn.execute(`INSERT INTO lote_ediciones (id_lote, revision, fecha_edicion, razon_edicion)
             SELECT id_lote, revision, fecha_edicion, razon_edicion FROM lote WHERE id_lote = ?`, [id]);
         await conn.execute("UPDATE medicamento_presentaciones SET estado = 'Inactiva' WHERE id_lote = ?", [id]);
@@ -282,4 +295,50 @@ async function editarLote(db, sesion, datos) {
     } catch (error) { await conn.rollback(); throw error; }
     finally { conn.release(); }
 }
-module.exports = { cargar, guardar, lotes, registrarMedicamento, editarLote };
+async function reporte(db, sesion, rango) {
+    await autorizar(db, sesion);
+    const { desde, hasta } = validarRangoReporte(rango);
+    const [filas] = await db.execute(`SELECT c.id_compra, c.numero_factura,
+        DATE_FORMAT(c.fecha_compra, '%Y-%m-%d') AS fecha_compra,
+        COALESCE(c.laboratorio, d.nombre) AS proveedor,
+        l.id_lote, l.numero_lote, COALESCE(l.nombre_medicamento, m.nombre) AS medicamento,
+        l.cantidad_inicial, l.costo_total, l.cantidad_empaques, l.precio_empaque, l.tipo_medicamento, l.contenido_caja,
+        l.paquetes_por_caja, l.unidades_por_blister, l.precio_venta, l.precio_venta_contenido, l.precio_venta_unidad
+        FROM compras c LEFT JOIN distribuidores d USING (id_distribuidor)
+        LEFT JOIN lote l ON l.id_compra = c.id_compra LEFT JOIN medicamentos m ON m.id_medicamento = l.id_medicamento
+        WHERE c.fecha_compra >= ? AND c.fecha_compra < DATE_ADD(?, INTERVAL 1 DAY)
+        ORDER BY c.fecha_compra, c.id_compra, l.id_lote`, [desde, hasta]);
+    return require('./compras-reporte').agruparReporte(filas, desde, hasta);
+}
+function validarRangoReporte(rango) {
+    const desde = String(rango?.desde || ''), hasta = String(rango?.hasta || '');
+    const fechaValida = fecha => /^\d{4}-\d{2}-\d{2}$/.test(fecha) && Number.isFinite(Date.parse(fecha + 'T12:00:00Z')) && new Date(fecha + 'T12:00:00Z').toISOString().slice(0, 10) === fecha;
+    if (!fechaValida(desde) || !fechaValida(hasta) || desde > hasta) throw new Error('Seleccioná un rango de fechas válido: Desde no puede ser posterior a Hasta.');
+    return { desde, hasta };
+}
+async function reporteLotes(db, sesion, rango) {
+    await autorizar(db, sesion);
+    const { desde, hasta } = validarRangoReporte(rango);
+    const [filas] = await db.execute(`SELECT l.id_lote, l.numero_lote, c.numero_factura,
+        COALESCE(l.nombre_medicamento, m.nombre) AS medicamento,
+        l.cantidad_disponible, l.tipo_medicamento, l.contenido_caja, l.paquetes_por_caja, l.unidades_por_blister,
+        l.precio_venta, l.precio_venta_contenido, l.precio_venta_unidad,
+        DATE_FORMAT(l.fecha_fabricacion, '%Y-%m-%d') AS fecha_fabricacion,
+        DATE_FORMAT(l.fecha_vencimiento, '%Y-%m-%d') AS fecha_vencimiento
+        FROM lote l JOIN medicamentos m USING (id_medicamento)
+        JOIN compras c ON c.id_compra = l.id_compra
+        WHERE l.fecha_ingreso >= ? AND l.fecha_ingreso < DATE_ADD(?, INTERVAL 1 DAY)
+        ORDER BY l.numero_lote, l.id_lote`, [desde, hasta]);
+    const [medicamentos] = await db.execute(`SELECT m.id_medicamento, m.nombre,
+        COALESCE(s.unidades_vendidas, 0) AS unidades_vendidas
+        FROM medicamentos m LEFT JOIN (
+            SELECT d.id_medicamento, SUM(dl.cantidad_unidades) AS unidades_vendidas
+            FROM detalle_venta_lotes dl JOIN detalles_venta d USING (id_detalle_venta)
+            JOIN ventas v ON v.id_venta = d.id_venta
+            WHERE v.estado = 'Completada' AND v.fecha_venta >= ? AND v.fecha_venta < DATE_ADD(?, INTERVAL 1 DAY)
+            GROUP BY d.id_medicamento
+        ) s ON s.id_medicamento = m.id_medicamento
+        ORDER BY unidades_vendidas DESC, m.nombre, m.id_medicamento`, [desde, hasta]);
+    return require('./lotes-reporte').prepararReporteLotes(filas, medicamentos, desde, hasta);
+}
+module.exports = { cargar, guardar, lotes, registrarMedicamento, editarLote, reporte, reporteLotes };

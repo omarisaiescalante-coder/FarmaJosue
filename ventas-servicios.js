@@ -5,7 +5,8 @@ const C = require('./calculos-venta');
 async function cargar(db, usuario) {
     await autorizar(db, usuario, 'ventas');
     const [medicamentos] = await db.execute("SELECT id_medicamento, codigo, nombre, restriccion, stock_total, estado, aplica_isv FROM medicamentos WHERE estado = 'Disponible' ORDER BY nombre");
-    const [presentaciones] = await db.execute(`SELECT p.*, l.numero_lote, l.cantidad_disponible FROM medicamento_presentaciones p
+    const [presentaciones] = await db.execute(`SELECT p.*, l.numero_lote, l.cantidad_disponible,
+        l.tipo_medicamento, l.contenido_caja, l.paquetes_por_caja, l.unidades_por_blister FROM medicamento_presentaciones p
         LEFT JOIN lote l ON l.id_lote = p.id_lote
         WHERE (p.id_lote IS NULL AND EXISTS (SELECT 1 FROM lote n WHERE n.id_medicamento = p.id_medicamento AND n.tipo_medicamento IS NULL AND n.estado = 'Disponible' AND n.cantidad_disponible > 0 AND n.fecha_vencimiento >= CURDATE()))
         OR (l.estado = 'Disponible' AND l.cantidad_disponible >= p.unidades_stock AND l.fecha_vencimiento >= CURDATE())`);

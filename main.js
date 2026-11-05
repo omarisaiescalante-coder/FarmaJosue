@@ -1,5 +1,5 @@
 // Importa Electron, la base de datos y las funciones de acceso.
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('node:path');
 const db = require('./database');
 const { autenticar } = require('./auth');
@@ -22,6 +22,20 @@ for (const operacion of ['cargar', 'listar', 'guardar', 'factura', 'resumen', 'r
 
 // Conserva el usuario conectado en memoria mientras la app permanece abierta.
 let usuarioActivo = null;
+ipcMain.handle('compras:guardarReportePDF', async (evento, datos) => {
+    try {
+        await require('./sesion-servicio').autorizar(db, usuarioActivo, 'compras');
+        const url = new URL(evento.sender.getURL());
+        if (url.protocol !== 'file:' || path.resolve(require('node:url').fileURLToPath(url)) !== path.join(__dirname, 'compras.html'))
+            throw new Error('Abrí Reportes desde el módulo de Compras.');
+        return { datos: await require('./reporte-pdf').guardarReportePDF({
+            sender: evento.sender, ventana: BrowserWindow.fromWebContents(evento.sender), dialog,
+            directorioDocumentos: app.getPath('documents'), writeFile: require('node:fs/promises').writeFile,
+        }, datos) };
+    } catch (error) {
+        return { error: error.code ? 'No se pudo guardar el PDF. Elegí una carpeta con permiso de escritura e intentá nuevamente.' : error.message };
+    }
+});
 for (const operacion of ['listar', 'guardar', 'eliminar']) {
     ipcMain.handle(`proveedores:${operacion}`, async (_evento, datos) => {
         try { return { datos: await proveedores[operacion](db, usuarioActivo, datos) }; }
@@ -127,6 +141,8 @@ for (const operacion of [
     'guardar',
     'lotes',
     'editarLote',
+    'reporte',
+    'reporteLotes',
     'registrarMedicamento'
 ]) {
 

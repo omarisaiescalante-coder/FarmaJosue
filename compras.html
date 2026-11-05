@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="inventario-lotes.css">
     <link rel="stylesheet" href="compras-flujo.css">
+    <link rel="stylesheet" href="compras-reporte.css">
     <script src="navegacion.js" defer></script>
 </head> 
 
@@ -51,9 +52,9 @@
 
         <div class="compras-barra-superior">
             <h1 id="pageTitle">Compras</h1>
+            <button id="abrirReporteCompras" type="button" class="btn btn-success">Reportes</button>
             <nav class="compras-accesos" aria-label="Inventarios de compras">
                 <button id="irInventarioCompras" type="button" class="btn btn-outline-success" disabled>Inventario de Compras</button>
-                <button id="regresarRegistroCompras" type="button" class="btn btn-outline-success">Inicio Compras</button>
                 <button id="verLotesRegistrados" type="button" class="btn btn-success" disabled>Inventario de Lotes</button>
             </nav>
         </div>
@@ -108,8 +109,11 @@
     </main>
 
     <script src="./proveedores-ui.js"></script>
+    <script src="./stock-empaques.js"></script>
     <script src="./inventario-lotes.js"></script>
     <script src="./inventario-compras.js"></script>
+    <script src="./equivalencias-lote.js"></script>
     <script src="./tabla.js"></script>
+    <script src="./compras-reporte-ui.js"></script>
 </body>
 </html>

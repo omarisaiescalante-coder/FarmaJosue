@@ -43,7 +43,7 @@ function pintarResultados() {
         return `<div class="list-group-item">
             <div class="d-flex justify-content-between align-items-center">
                 <strong>${escapar(m.nombre)}${m.restriccion === 'Con Receta Medica' ? ' <span class="badge text-bg-warning">Receta</span>' : ''}</strong>
-                <small class="text-secondary">Stock: ${pres.map(p => Math.floor(Number(p.cantidad_disponible ?? m.stock_total) / Number(p.unidades_stock)) + ' ' + escapar(etiqueta(p))).join(' / ')}</small>
+                <small class="text-secondary">${[...new Map(pres.map(p => [p.id_lote ?? 'anterior', p])).values()].map(p => escapar((p.numero_lote ? `Lote ${p.numero_lote}: ` : '') + window.textoStockEmpaque(p, p.cantidad_disponible ?? m.stock_total))).join(' / ')}</small>
             </div>
             ${pres.map((p) => `<div class="d-flex justify-content-between align-items-center mt-1">
                 <span>${escapar(etiqueta(p))}${p.numero_lote ? ` (Lote ${escapar(p.numero_lote)})` : ''}: <strong>L. ${Number(p.precio_venta).toFixed(2)}</strong></span>

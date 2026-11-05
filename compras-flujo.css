@@ -304,3 +304,76 @@ body[data-module="compras"] .proveedores-opciones button + button { margin-top: 
     body[data-module="compras"] .compras-layout select.form-select option:checked,
     body[data-module="compras"] .compras-layout select.form-select option:hover { background: #edf2f7; }
 }
+/* Distribución del registro de lotes según el boceto del cuaderno. */
+body[data-module="compras"] .lote-distribucion-cuaderno {
+    --columnas-lote: repeat(3, minmax(0, 1fr)) 32px;
+    --separacion-columnas-lote: 24px;
+    display: grid;
+    grid-template-columns: var(--columnas-lote);
+    grid-template-rows: auto auto auto auto auto auto auto;
+    align-items: start;
+    gap: 30px var(--separacion-columnas-lote);
+}
+.lote-distribucion-cuaderno > * { min-width: 0; width: auto; padding: 0; margin: 0; }
+.lote-distribucion-cuaderno .form-control, .lote-distribucion-cuaderno .form-select { box-sizing: border-box; width: 100%; }
+.lote-distribucion-cuaderno button { box-sizing: border-box; }
+body[data-module="compras"] .lote-distribucion-cuaderno .form-label { margin: 0 0 14px; line-height: 1.5; }
+body[data-module="compras"] .lote-distribucion-cuaderno .form-control,
+body[data-module="compras"] .lote-distribucion-cuaderno .form-select { display: block; margin: 0; }
+.lote-distribucion-cuaderno > [hidden] { display: none !important; }
+.lote-nombre-cuaderno { grid-column: 1 / 3; grid-row: 1; }
+.lote-numero-cuaderno { grid-column: 3; grid-row: 1; }
+.lote-cantidad-cuaderno { grid-column: 1; grid-row: 2; }
+.lote-precio-cuaderno { grid-column: 2; grid-row: 2; }
+.lote-entrada-cuaderno { grid-column: 3; grid-row: 2; }
+.lote-ventas-cuaderno { grid-column: 1 / -1; grid-row: 3; }
+.lote-forma-venta {
+    display: grid;
+    grid-template-columns: var(--columnas-lote);
+    align-items: end;
+    gap: var(--separacion-columnas-lote);
+    margin-bottom: 18px;
+}
+.lote-forma-venta label { min-width: 0; width: 100%; margin: 0; font-size: 13px; line-height: 1.5; color: #4c6258; }
+body[data-module="compras"] .lote-distribucion-cuaderno .lote-forma-venta label > .form-select,
+body[data-module="compras"] .lote-distribucion-cuaderno .lote-forma-venta label > .form-control { margin-top: 14px; }
+body[data-module="compras"] #vistaRegistroCompras .lote-forma-venta > button { padding: 0; min-height: 32px; margin-bottom: 7px; font-size: 22px; }
+.lote-buscador { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: end; }
+.lote-buscador > .form-label { grid-column: 1; grid-row: 1; }
+.lote-buscador > input { grid-column: 1; grid-row: 2; }
+body[data-module="compras"] #vistaRegistroCompras .lote-buscador > .btn-warning {
+    grid-column: 2; grid-row: 2; justify-self: start; align-self: stretch;
+    margin: 0; min-height: 42px; background: #ffc107; color: #342900; border-color: #ffc107;
+}
+body[data-module="compras"] #vistaRegistroCompras .lote-buscador > .btn-warning:hover { background: #eab000; border-color: #eab000; color: #342900; }
+.lote-buscador > p { grid-column: 1 / -1; grid-row: 3; color: #725500; margin: 8px 0 0; font-size: 13px; }
+.lote-buscador > [hidden] { display: none; }
+.lote-fechas-cuaderno { grid-column: 1 / -1; grid-row: 4; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.lote-fechas-cuaderno > * { min-width: 0; width: auto; padding: 0; }
+body[data-module="compras"] .lote-distribucion-cuaderno > [data-total-lote] { grid-column: 1 / -1; grid-row: 5; padding: 0; font-size: 18px; }
+.lote-distribucion-cuaderno > [data-unidades-lote] { grid-column: 1 / -1; grid-row: 6; font-size: 16px; }
+.lote-acciones-cuaderno { grid-column: 1 / -1; grid-row: 7; display: flex; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 560px) {
+    body[data-module="compras"] .lote-distribucion-cuaderno { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .lote-distribucion-cuaderno > * { grid-column: 1 !important; grid-row: auto !important; }
+    .lote-buscador { column-gap: 12px; grid-template-columns: minmax(0, 1fr) auto; }
+    .lote-forma-venta { gap: 8px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 28px; }
+    .lote-fechas-cuaderno { gap: 12px; }
+}
+.compra-confirmacion { box-sizing: border-box; width: min(920px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); margin: auto; padding: 24px; border: 1px solid #d7e0ec; border-radius: 14px; color: #203b56; overflow: auto; }
+.compra-confirmacion::backdrop { background: #14283c99; }
+.compra-confirmacion h2 { margin: 0 0 16px; font-size: 24px; }
+.compra-confirmacion-tabla { overflow-x: auto; }
+.compra-confirmacion table { width: 100%; min-width: 620px; border-collapse: collapse; }
+.compra-confirmacion th, .compra-confirmacion td { padding: 12px; border: 1px solid #d7e0ec; overflow-wrap: anywhere; }
+.compra-confirmacion thead { background: #315d8e; color: #fff; text-align: left; }
+.compra-confirmacion tfoot { background: #e6edf5; font-weight: 700; }
+.compra-confirmacion-numero { text-align: right; font-variant-numeric: tabular-nums; }
+.compra-confirmacion-pregunta { margin: 20px 0; font-weight: 700; font-size: 18px; }
+.compra-confirmacion-acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.compra-confirmacion-acciones button { min-height: 40px; }
+.registro-medicamento .registro-medicamento-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+body[data-module="compras"] #vistaRegistroCompras .registro-medicamento .registro-medicamento-acciones button.btn {
+    box-sizing: border-box; flex: 0 0 auto; width: auto; height: 32px; min-height: 32px;
+    margin: 0; padding: 4px 10px; font-size: 12px; line-height: 1.4; border-radius: 6px;
+}
