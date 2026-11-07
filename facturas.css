@@ -1,83 +1,78 @@
 #factura-detalle {
     display: grid;
     place-items: center;
+    gap: 1rem;
 }
 
-#factura-documento {
-    width: min(100%, 540px);
+.factura-documento {
+    box-sizing: border-box;
+    width: min(100%, 24rem);
+    padding: 1.3rem 1.15rem;
     background: #fff;
-    border: 1px solid #d9d9d9;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    padding: 1.5rem 1.25rem;
-    color: #1b1b1b;
-    font-family: "Segoe UI", sans-serif;
-    line-height: 1.5;
+    border: 1px solid #dce8e2;
+    border-top: 4px solid #16704f;
+    border-radius: .85rem;
+    box-shadow: 0 10px 28px rgb(20 46 34 / 9%);
+    color: #182a24;
+    font: .85rem/1.45 "Segoe UI", sans-serif;
+    overflow-wrap: anywhere;
 }
 
-#factura-documento h1,
-#factura-documento h2,
-#factura-documento p {
-    margin: 0 0 0.5rem;
+.factura-cabecera { text-align: center; }
+.factura-cabecera img { display: block; margin: 0 auto .45rem; object-fit: contain; }
+.factura-cabecera h1 { margin: 0; font-size: 1.4rem; }
+.factura-cabecera h2 { margin: .16rem 0 .45rem; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.factura-cabecera p { margin: .3rem 0 0; }
+.factura-tipo { font-size: .7rem; font-weight: 700; letter-spacing: .1em; }
+.factura-no-fiscal { font-size: .75rem; color: #41544a; }
+.factura-datos {
+    display: grid;
+    grid-template-columns: minmax(4rem, auto) minmax(0, 1fr);
+    gap: .25rem .65rem;
+    margin: .85rem 0 0;
+    padding: .75rem 0 0;
+    border-top: 1px dashed #a6b6ad;
 }
-
-#factura-documento h1 {
-    font-size: 1.8rem;
-    text-align: center;
+.factura-datos dt { font-weight: 650; }
+.factura-datos dd { margin: 0; text-align: right; }
+.factura-seccion {
+    margin-top: .85rem;
+    padding-top: .65rem;
+    border-top: 1px dashed #a6b6ad;
 }
-
-#factura-documento h2 {
-    font-size: 1.3rem;
-    text-align: center;
+.factura-seccion h3 { margin: 0 0 .35rem; font-size: .85rem; }
+.factura-articulos, .factura-lotes { margin: 0; padding: 0; list-style: none; }
+.factura-articulo { padding: .5rem 0; border-bottom: 1px solid #e2ebe6; break-inside: avoid; }
+.factura-articulo:last-child { border-bottom: 0; }
+.factura-articulo-cabecera { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; }
+.factura-articulo p { margin: .12rem 0; }
+.factura-lotes { color: #3e574a; font-size: .76rem; }
+.factura-importes { margin: 0; padding: 0; border: 0; font-variant-numeric: tabular-nums; }
+.factura-datos .factura-total {
+    margin-top: .3rem;
+    padding-top: .45rem;
+    border-top: 1px solid #a6b6ad;
+    font-size: 1.05rem;
+    font-weight: 750;
+    color: #126349;
 }
-
-.factura-cabecera {
-    padding-bottom: 1rem;
-    border-bottom: 1px dashed #bdbdbd;
-    margin-bottom: 1rem;
-}
-
-.factura-tabla {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0.75rem 0 1rem;
-}
-
-.factura-tabla th,
-.factura-tabla td {
-    border-bottom: 1px solid #e8e8e8;
-    padding: 0.5rem 0.35rem;
-    text-align: left;
-    vertical-align: top;
-}
-
-.factura-tabla th {
-    background: #f7f7f7;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-}
-
-.factura-resumen {
-    border-top: 1px dashed #bdbdbd;
-    padding-top: 0.8rem;
-    text-align: right;
-}
-
-.factura-resumen p {
-    margin-bottom: 0.25rem;
-}
+.factura-pie { margin-top: 1rem; padding-top: .65rem; border-top: 1px dashed #a6b6ad; text-align: center; }
 
 @media print {
-    .cabecera, .controles-facturas, #facturas-mensaje, #imprimir { display: none !important; }
-    body { background: white; color: black; }
-    .contenido { max-width: none; margin: 0; padding: 0; }
-    #factura-detalle { border: none; box-shadow: none; }
-    #factura-documento {
-        width: 100%;
-        border: none;
-        box-shadow: none;
+    @page { margin: 4mm; }
+    .cabecera, .controles-facturas, #facturas-mensaje, #pagina-facturas > .tabla-contenedor, #imprimir { display: none !important; }
+    body[data-module="facturas"] { background: white; color: black; }
+    body[data-module="facturas"] .contenido { max-width: none; margin: 0; padding: 0; }
+    #factura-detalle { display: block; margin: 0; padding: 0; border: none; box-shadow: none; }
+    .factura-documento {
+        width: min(100%, 72mm);
+        margin-inline: auto;
         padding: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        color: #000;
+        font-size: 10pt;
     }
-    table { width: 100%; }
-    tr { break-inside: avoid; }
+    .factura-cabecera, .factura-datos, .factura-pie { break-inside: avoid; }
 }

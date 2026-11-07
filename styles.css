@@ -1063,6 +1063,178 @@ body[data-module="ventas"] .ventas-resumen > .table-responsive {
     flex: 1;
     min-height: 120px;
 }
+body[data-module="ventas"] [data-cantidad-venta] { width: 4.5rem; min-height: 31px; }
+body[data-module="ventas"] [data-cantidad-venta][aria-invalid="true"] { border-color: #dc3545; }
+.venta-registro-cabecera {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .75rem;
+    justify-content: space-between;
+}
+.venta-registro-cabecera h2 { min-width: 0; margin: 0; }
+.venta-registro-boton {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .5rem;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: .32rem .55rem;
+    text-align: left;
+    color: #193e6c;
+    background: #f2f7fe;
+    border: 1px solid #d9e7fa;
+    border-radius: .8rem;
+    cursor: pointer;
+}
+.venta-registro-boton:hover { color: #143765; background: #e9f2ff; border-color: #afc9eb; }
+.venta-registro-boton:focus-visible { outline: 2px solid #2463df; outline-offset: 2px; }
+.venta-registro-icono {
+    display: grid;
+    place-items: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: .5rem;
+    color: #2056a5;
+    background: #dceaff;
+}
+.venta-registro-icono svg, .venta-registro-flecha { width: 1rem; height: 1rem; }
+.venta-registro-titulo { display: block; font-size: .9rem; font-weight: 700; }
+.venta-registro-ayuda { display: block; color: #526984; font-size: .72rem; }
+.venta-registro-flecha { transition: transform .18s ease; }
+.venta-registro-boton[aria-expanded="true"] .venta-registro-flecha { transform: rotate(180deg); }
+.venta-registro-panel {
+    --tiempo-registro: .26s;
+    display: grid;
+    grid-template-rows: 1fr;
+    margin-top: .75rem;
+    transition: grid-template-rows var(--tiempo-registro) ease,
+        margin-top var(--tiempo-registro) ease, visibility 0s;
+}
+.venta-registro-panel > .table-responsive { min-width: 0; min-height: 0; overflow: auto; }
+.venta-registro-panel[inert] {
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    visibility: hidden;
+    transition-delay: 0s, 0s, var(--tiempo-registro);
+}
+@media (prefers-reduced-motion: reduce) {
+    .venta-registro-flecha, .venta-registro-panel { transition: none; }
+}
+#dialogoVenta {
+    width: min(38rem, calc(100% - 2rem));
+    max-height: calc(100% - 2rem);
+    padding: 0;
+    overflow: auto;
+    color: #182b42;
+    background: #fff;
+    border: 1px solid #dce7f4;
+    border-radius: 1.25rem;
+    box-shadow: 0 24px 70px rgb(13 35 64 / 25%);
+}
+#dialogoVenta::backdrop { background: rgb(13 27 49 / 52%); }
+.venta-dialogo-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.4rem 1.5rem;
+    border-bottom: 1px solid #dae6f5;
+    background: linear-gradient(115deg, #edf5ff, #f8fbff);
+}
+.venta-dialogo-icono {
+    display: grid;
+    place-items: center;
+    flex: 0 0 3rem;
+    height: 3rem;
+    border-radius: 0.9rem;
+    background: #d8e9ff;
+    color: #2056a5;
+}
+.venta-dialogo-icono svg { width: 1.45rem; height: 1.45rem; }
+.venta-icono-exito, #dialogoVenta[data-estado="exitosa"] .venta-icono-resumen { display: none; }
+#dialogoVenta[data-estado="exitosa"] .venta-icono-exito { display: block; }
+#dialogoVenta[data-estado="exitosa"] .venta-dialogo-cabecera {
+    background: linear-gradient(115deg, #e6f7ef, #f5fcf8);
+    border-bottom-color: #d7eddf;
+}
+#dialogoVenta[data-estado="exitosa"] .venta-dialogo-icono { color: #146247; background: #d0efdd; }
+.venta-dialogo-etiqueta { color: #475e78; font-size: .69rem; font-weight: 700; letter-spacing: .12em; }
+#tituloDialogoVenta { margin: .14rem 0; font-size: 1.5rem; line-height: 1.2; }
+.venta-dialogo-cabecera p { margin: .3rem 0 0; color: #4e6178; font-size: .87rem; }
+.venta-dialogo-cuerpo { padding: 1.2rem 1.5rem; }
+.venta-dialogo-tabla {
+    border: 1px solid #e0e9f4;
+    border-radius: .75rem;
+}
+.venta-dialogo-tabla th, .venta-dialogo-tabla td { padding: .6rem .7rem; }
+.venta-dialogo-tabla th { background: #f1f6fd; color: #405976; }
+.venta-dialogo-tabla tbody tr:last-child td { border-bottom: 0; }
+.venta-dialogo-tabla td small { color: #516780; }
+.venta-dialogo-totales {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: .38rem .8rem;
+    margin: .95rem 0 0;
+    padding: .85rem .95rem;
+    border-radius: .75rem;
+    background: #f4f8fd;
+}
+.venta-dialogo-totales dt, .venta-dialogo-totales dd { margin: 0; font-weight: 500; }
+.venta-dialogo-totales dd { text-align: right; font-variant-numeric: tabular-nums; }
+.venta-dialogo-totales .venta-dialogo-total {
+    padding-top: .45rem;
+    border-top: 1px solid #d8e4f2;
+    font-size: 1.04rem;
+    font-weight: 750;
+}
+.venta-dialogo-error { margin: .7rem 0 0; color: #a82637; }
+.venta-dialogo-error:empty, #estadoVistaFactura:empty { display: none; }
+.venta-dialogo-acciones {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .5rem;
+    padding: .9rem 1.5rem;
+    background: #f8fafd;
+    border-top: 1px solid #e4ecf6;
+}
+.venta-dialogo-acciones .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.65rem;
+    padding: .55rem .9rem;
+    border-radius: .65rem;
+    text-decoration: none;
+}
+#dialogoVenta[data-estado="exitosa"] #imprimirRecibo {
+    background: #16704f;
+    color: #fff;
+    border: 1px solid #16704f;
+}
+#dialogoVenta[data-estado="exitosa"] #imprimirRecibo:hover { background: #10583e; }
+.venta-exito-resumen {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .55rem 1.2rem;
+    padding: .9rem 1rem;
+    border-radius: .8rem;
+    border: 1px solid #daebe2;
+    background: #f5fbf7;
+}
+.venta-exito-resumen span { display: block; color: #4e655a; font-size: .8rem; }
+.venta-exito-resumen strong { display: block; color: #155b43; font-size: 1.12rem; }
+.venta-cambio { margin: .5rem 0 0; color: #465e52; }
+#vistaFacturaVenta { margin-top: 1rem; }
+#documentoVistaFactura { margin: 0 auto; }
+@media (max-width: 480px) {
+    .venta-dialogo-cabecera, .venta-dialogo-cuerpo, .venta-dialogo-acciones { padding: 1rem; }
+    .venta-dialogo-acciones .btn { flex: 1 0 auto; }
+}
 body[data-module="ventas"] #guardarButton { flex-shrink: 0; }
 body[data-module="ventas"] .ventas-resumen > .d-flex { gap: 12px; flex-wrap: wrap; }
 @media (min-width: 1400px) {
@@ -1072,4 +1244,187 @@ body[data-module="ventas"] .ventas-resumen > .d-flex { gap: 12px; flex-wrap: wra
 @media (max-width: 700px) {
     body[data-module="ventas"] main.container-fluid { padding: 16px 12px 24px !important; }
     body[data-module="ventas"] .ventas-ingreso .card { padding: 18px !important; }
+}
+
+.reporte-ventas-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 2.65rem;
+}
+.reporte-ventas-boton svg { width: 1.1rem; height: 1.1rem; flex: none; }
+
+#modalReporte {
+    width: min(73rem, calc(100% - 2rem));
+    max-height: calc(100% - 2rem);
+    padding: 0;
+    overflow: hidden;
+    color: #182b42;
+    background: #fff;
+    border: 1px solid #dce7f4;
+    border-radius: 1.2rem;
+    box-shadow: 0 24px 70px rgb(13 35 64 / 26%);
+}
+#modalReporte[open] { display: flex; flex-direction: column; }
+#modalReporte::backdrop { background: rgb(13 27 49 / 52%); }
+.reporte-ventas-cabecera, .reporte-ventas-pie {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.4rem;
+}
+.reporte-ventas-cabecera {
+    align-items: flex-start;
+    background: linear-gradient(115deg, #e8f2ff, #f7faff);
+    border-bottom: 1px solid #dce7f4;
+}
+.reporte-ventas-cabecera h2 { margin: .12rem 0 .25rem; font-size: 1.45rem; }
+.reporte-ventas-cabecera p { margin: 0; color: #50637b; font-size: .85rem; }
+.reporte-ventas-cabecera .reporte-ventas-etiqueta { font-size: .68rem; font-weight: 750; letter-spacing: .12em; }
+.reporte-ventas-cerrar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 2.5rem;
+    height: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0;
+    color: #264b76;
+    background: #fff;
+    border: 1px solid #d8e5f6;
+    border-radius: .7rem;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+.reporte-ventas-cerrar:hover { background: #e8f2ff; }
+.reporte-ventas-cerrar:focus-visible { outline: 2px solid #2463df; outline-offset: 2px; }
+.reporte-ventas-cuerpo { overflow: auto; min-height: 0; padding: 1.15rem 1.4rem; }
+.reporte-ventas-pie { justify-content: flex-end; border-top: 1px solid #e4ecf6; background: #f8fafd; }
+.reporte-ventas-filtros {
+    display: grid;
+    grid-template-columns: minmax(9rem, 1.1fr) repeat(2, minmax(8rem, 1fr)) auto;
+    align-items: end;
+    gap: .75rem;
+    padding: .8rem;
+    background: #f5f8fd;
+    border: 1px solid #e2ebf7;
+    border-radius: .8rem;
+}
+.reporte-ventas-filtros > div { min-width: 0; }
+.reporte-ventas-filtros label { display: block; margin: 0 0 .3rem; color: #405975; font-weight: 650; }
+.reporte-ventas-filtros .form-control, .reporte-ventas-filtros .form-select { width: 100%; }
+.reporte-ventas-filtros button { min-height: 46px; }
+.reporte-ventas-estado { margin: .75rem 0 0; color: #425973; }
+.reporte-ventas-estado:empty { display: none; }
+.reporte-ventas-estado.reporte-ventas-error { color: #a82637; }
+.reporte-ventas-totales {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .65rem;
+    margin: 1rem 0;
+}
+.reporte-ventas-totales > div { padding: .8rem; border: 1px solid #dfe9f4; border-radius: .75rem; }
+.reporte-ventas-totales > div:first-child { background: #eff9f4; border-color: #cfe8da; }
+.reporte-ventas-totales dt { color: #4b617b; font-size: .8rem; }
+.reporte-ventas-totales dd {
+    margin: .15rem 0 0;
+    font-size: 1.25rem;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+#reporteTotal { color: #146247; }
+.reporte-ventas-pagos, .reporte-ventas-lista-cabecera {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .45rem .75rem;
+    margin: 1rem 0 .55rem;
+}
+.reporte-ventas-pagos h3, .reporte-ventas-lista-cabecera h3 { margin: 0; font-size: .95rem; }
+.reporte-ventas-pagos ul { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.reporte-ventas-pagos li, #reporteRango {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .3rem .6rem;
+    color: #415a77;
+    background: #eef4fc;
+    border-radius: .5rem;
+    font-size: .78rem;
+}
+.reporte-ventas-lista { overflow-x: auto; border: 1px solid #dfe9f4; border-radius: .75rem; }
+.reporte-ventas-tabla { margin: 0; min-width: 52rem; }
+#modalReporte .reporte-ventas-tabla th, #modalReporte .reporte-ventas-tabla td { padding: .65rem .6rem; vertical-align: middle; }
+#modalReporte .reporte-ventas-tabla th { background: #f0f5fc; color: #405976; white-space: nowrap; }
+.reporte-ventas-tabla tbody tr:last-child td { border-bottom: 0; }
+.reporte-ventas-tabla .reporte-venta-numero { white-space: nowrap; font-weight: 650; }
+.reporte-ventas-tabla .reporte-venta-importe { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.reporte-venta-insignia {
+    display: inline-block;
+    padding: .2rem .5rem;
+    color: #145740;
+    background: #e5f6ec;
+    border-radius: 1rem;
+    font-size: .76rem;
+}
+.reporte-venta-anulada { color: #8f2c3b; background: #fbecef; }
+.reporte-ventas-tabla .reporte-ventas-vacio { padding: 1rem; text-align: center; color: #50637b; }
+@media (max-width: 780px) {
+    .reporte-ventas-filtros, .reporte-ventas-totales { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+    .reporte-ventas-cabecera, .reporte-ventas-cuerpo, .reporte-ventas-pie { padding: .85rem; }
+    .reporte-ventas-filtros { grid-template-columns: minmax(0, 1fr); }
+    .reporte-ventas-totales dd { font-size: 1rem; }
+}
+
+@media print {
+    @page reporteVentas {
+        size: A4 landscape;
+        margin: 10mm 10mm 12mm;
+        @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 8pt "Segoe UI", sans-serif; }
+    }
+    body.imprimiendo-reporte-ventas {
+        page: reporteVentas;
+        margin: 0;
+        padding: 0;
+        background: #fff !important;
+    }
+    body.imprimiendo-reporte-ventas > :not(#modalReporte) { display: none !important; }
+    .imprimiendo-reporte-ventas #modalReporte[open] {
+        display: block;
+        position: static;
+        width: 100%;
+        max-width: none;
+        height: auto;
+        max-height: none;
+        margin: 0;
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        print-color-adjust: exact;
+    }
+    .imprimiendo-reporte-ventas #modalReporte::backdrop { background: transparent; }
+    .imprimiendo-reporte-ventas .reporte-ventas-cerrar,
+    .imprimiendo-reporte-ventas .reporte-ventas-filtros,
+    .imprimiendo-reporte-ventas .reporte-ventas-estado,
+    .imprimiendo-reporte-ventas .reporte-ventas-pie { display: none; }
+    .imprimiendo-reporte-ventas .reporte-ventas-cuerpo,
+    .imprimiendo-reporte-ventas .reporte-ventas-lista { overflow: visible; }
+    .imprimiendo-reporte-ventas .reporte-ventas-cuerpo { padding: 0; }
+    .imprimiendo-reporte-ventas .reporte-ventas-cabecera { padding: .65rem .85rem; }
+    .imprimiendo-reporte-ventas .reporte-ventas-cabecera p:not(.reporte-ventas-etiqueta) { display: none; }
+    .imprimiendo-reporte-ventas .reporte-ventas-totales { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .imprimiendo-reporte-ventas .reporte-ventas-totales,
+    .imprimiendo-reporte-ventas .reporte-ventas-pagos { break-inside: avoid; }
+    .imprimiendo-reporte-ventas .reporte-ventas-lista-cabecera { break-after: avoid; }
+    .imprimiendo-reporte-ventas .reporte-ventas-tabla { width: 100%; min-width: 0; border-collapse: collapse; }
+    .imprimiendo-reporte-ventas .reporte-ventas-tabla thead { display: table-header-group; }
+    .imprimiendo-reporte-ventas .reporte-ventas-tabla th.text-end { text-align: right; }
+    .imprimiendo-reporte-ventas .reporte-ventas-tabla tr { break-inside: avoid; }
+    .imprimiendo-reporte-ventas #modalReporte .reporte-ventas-tabla th,
+    .imprimiendo-reporte-ventas #modalReporte .reporte-ventas-tabla td { padding: .35rem; font-size: 8.5pt; }
 }

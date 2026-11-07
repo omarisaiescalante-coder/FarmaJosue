@@ -22,20 +22,26 @@ for (const operacion of ['cargar', 'listar', 'guardar', 'factura', 'resumen', 'r
 
 // Conserva el usuario conectado en memoria mientras la app permanece abierta.
 let usuarioActivo = null;
-ipcMain.handle('compras:guardarReportePDF', async (evento, datos) => {
-    try {
-        await require('./sesion-servicio').autorizar(db, usuarioActivo, 'compras');
-        const url = new URL(evento.sender.getURL());
-        if (url.protocol !== 'file:' || path.resolve(require('node:url').fileURLToPath(url)) !== path.join(__dirname, 'compras.html'))
-            throw new Error('Abrí Reportes desde el módulo de Compras.');
-        return { datos: await require('./reporte-pdf').guardarReportePDF({
-            sender: evento.sender, ventana: BrowserWindow.fromWebContents(evento.sender), dialog,
-            directorioDocumentos: app.getPath('documents'), writeFile: require('node:fs/promises').writeFile,
-        }, datos) };
-    } catch (error) {
-        return { error: error.code ? 'No se pudo guardar el PDF. Elegí una carpeta con permiso de escritura e intentá nuevamente.' : error.message };
-    }
-});
+function guardarPdfModulo(modulo, tipos) {
+    return async (evento, datos) => {
+        try {
+            await require('./sesion-servicio').autorizar(db, usuarioActivo, modulo);
+            const url = new URL(evento.sender.getURL());
+            if (url.protocol !== 'file:' || path.resolve(require('node:url').fileURLToPath(url)) !== path.join(__dirname, modulo + '.html'))
+                throw new Error('Abrí Reportes desde el módulo de ' + (modulo === 'ventas' ? 'Ventas.' : 'Compras.'));
+            if (!tipos.includes(datos?.tipo)) throw new Error('Generá un reporte antes de guardarlo.');
+            return { datos: await require('./reporte-pdf').guardarReportePDF({
+                sender: evento.sender, ventana: BrowserWindow.fromWebContents(evento.sender), dialog,
+                directorioDocumentos: app.getPath('documents'), writeFile: require('node:fs/promises').writeFile,
+            }, datos) };
+        } catch (error) {
+            return { error: error.code ? 'No se pudo guardar el PDF. Elegí una carpeta con permiso de escritura e intentá nuevamente.' : error.message };
+        }
+    };
+}
+ipcMain.handle('compras:guardarReportePDF', guardarPdfModulo('compras', ['compras', 'lotes']));
+ipcMain.handle('ventas:guardarReportePDF', guardarPdfModulo('ventas', ['ventas']));
+
 for (const operacion of ['listar', 'guardar', 'eliminar']) {
     ipcMain.handle(`proveedores:${operacion}`, async (_evento, datos) => {
         try { return { datos: await proveedores[operacion](db, usuarioActivo, datos) }; }

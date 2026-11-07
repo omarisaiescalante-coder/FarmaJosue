@@ -5,11 +5,19 @@ const C = require('./calculos-venta');
 async function cargar(db, usuario) {
     await autorizar(db, usuario, 'ventas');
     const [medicamentos] = await db.execute("SELECT id_medicamento, codigo, nombre, restriccion, stock_total, estado, aplica_isv FROM medicamentos WHERE estado = 'Disponible' ORDER BY nombre");
-    const [presentaciones] = await db.execute(`SELECT p.*, l.numero_lote, l.cantidad_disponible,
-        l.tipo_medicamento, l.contenido_caja, l.paquetes_por_caja, l.unidades_por_blister FROM medicamento_presentaciones p
-        LEFT JOIN lote l ON l.id_lote = p.id_lote
-        WHERE (p.id_lote IS NULL AND EXISTS (SELECT 1 FROM lote n WHERE n.id_medicamento = p.id_medicamento AND n.tipo_medicamento IS NULL AND n.estado = 'Disponible' AND n.cantidad_disponible > 0 AND n.fecha_vencimiento >= CURDATE()))
-        OR (l.estado = 'Disponible' AND l.cantidad_disponible >= p.unidades_stock AND l.fecha_vencimiento >= CURDATE())`);
+    const [presentaciones] = await db.execute(`SELECT p.*, l.id_lote AS id_lote_catalogo, l.numero_lote, l.cantidad_disponible,
+        DATE_FORMAT(l.fecha_vencimiento, '%Y-%m-%d') AS vence_lote,
+        l.tipo_medicamento, l.contenido_caja, l.paquetes_por_caja, l.unidades_por_blister
+        FROM medicamento_presentaciones p
+        JOIN lote l ON l.id_lote = COALESCE(p.id_lote, (
+            SELECT n.id_lote FROM lote n
+            WHERE n.id_medicamento = p.id_medicamento AND n.tipo_medicamento IS NULL
+                AND n.estado = 'Disponible' AND n.cantidad_disponible > 0 AND n.fecha_vencimiento >= CURDATE()
+            ORDER BY n.fecha_vencimiento, n.id_lote LIMIT 1
+        ))
+        WHERE l.estado = 'Disponible' AND l.cantidad_disponible > 0 AND l.fecha_vencimiento >= CURDATE()
+            AND (p.id_lote IS NULL OR l.cantidad_disponible >= p.unidades_stock)
+        ORDER BY l.fecha_vencimiento, l.id_lote, p.id_presentacion`);
     return { medicamentos, presentaciones: presentaciones.filter(p => p.estado !== 'Inactiva') };
 }
 async function listar(db, usuario) {
@@ -156,8 +164,21 @@ async function factura(db, usuario, id) {
         c.dni AS dni_cliente, CONCAT(u.nombre, ' ', u.apellido) AS vendedor FROM ventas v
         LEFT JOIN clientes c USING (id_cliente) JOIN usuarios u USING (id_usuario) WHERE v.id_venta = ?`, [id]);
     if (!venta) throw new Error('Venta no encontrada.');
-    const [detalle] = await db.execute(`SELECT m.nombre, d.presentacion AS nombre_presentacion, d.cantidad, d.precio_unitario, d.subtotal
+    const [detalle] = await db.execute(`SELECT d.id_detalle_venta, m.nombre, d.presentacion AS nombre_presentacion, d.cantidad, d.precio_unitario, d.subtotal
         FROM detalles_venta d JOIN medicamentos m USING (id_medicamento) WHERE d.id_venta = ? ORDER BY d.id_detalle_venta`, [id]);
-    return { venta, detalle };
+    const [lotes] = await db.execute(`SELECT a.id_detalle_venta, l.numero_lote,
+        DATE_FORMAT(l.fecha_vencimiento, '%Y-%m-%d') AS vence_lote, a.cantidad_unidades
+        FROM detalle_venta_lotes a JOIN detalles_venta d USING (id_detalle_venta)
+        JOIN lote l USING (id_lote) WHERE d.id_venta = ?
+        ORDER BY l.fecha_vencimiento, l.id_lote`, [id]);
+    const lotesPorDetalle = new Map();
+    for (const lote of lotes) {
+        const registrados = lotesPorDetalle.get(lote.id_detalle_venta) || [];
+        registrados.push(lote);
+        lotesPorDetalle.set(lote.id_detalle_venta, registrados);
+    }
+    return { venta, detalle: detalle.map(linea => ({
+        ...linea, lotes: lotesPorDetalle.get(linea.id_detalle_venta) || [],
+    })) };
 }
 module.exports = { cargar, listar, guardar, factura, resumen, reporte };

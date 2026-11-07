@@ -5,6 +5,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'">
 <title>Facturas | Farmacia Josué</title>
 <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="facturas.css">
+<script src="factura-documento.js" defer></script>
 <script src="facturas-ui.js" defer></script>
     <script src="navegacion.js" defer></script>
 </head>
@@ -17,7 +18,7 @@
 <div class="controles-facturas"><a href="ventas.html">Registrar una venta</a><h1>Facturas de venta</h1>
 <label for="buscar-factura">Buscar por factura o DNI</label><input id="buscar-factura" type="search">
 <div class="tabla-contenedor"><table><thead><tr><th>ID</th><th>Factura</th><th>DNI</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead><tbody id="facturas-filas"></tbody></table></div></div>
-<section id="factura-detalle" class="caja" hidden><div id="factura-documento"></div><button id="imprimir" type="button">Imprimir factura</button></section>
+<section id="factura-detalle" class="caja" hidden><div id="factura-documento" class="factura-documento"></div><button id="imprimir" type="button">Imprimir factura</button></section>
 </section>
 </main>
 </body></html>

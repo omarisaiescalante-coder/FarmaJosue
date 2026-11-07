@@ -15,26 +15,7 @@ async function cargar() { ventas = await solicitar(window.farmacia.listarVentas(
 async function mostrarFactura(id) {
     $('factura-detalle').hidden = true;
     const { venta, detalle } = await solicitar(window.farmacia.obtenerFactura(id));
-    $('factura-documento').innerHTML = `
-        <div class="factura-cabecera">
-            <h1>Farmacia Josué</h1>
-            <h2>Factura ${escapar(venta.numero_factura)}</h2>
-            <p><strong>ID de venta:</strong> ${Number(venta.id_venta || id)}</p>
-            <p>Fecha: ${escapar(venta.fecha_venta)} · Estado: ${escapar(venta.estado)}</p>
-            <p>Método de pago: ${escapar(venta.metodo_pago)}</p>
-            <p>DNI: ${escapar(venta.dni_cliente || 'Sin DNI registrado')}</p>
-        </div>
-        <table class="factura-tabla">
-            <thead><tr><th>Medicamento</th><th>Presentación</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead>
-            <tbody>${detalle.map(d => `<tr><td>${escapar(d.nombre)}</td><td>${escapar(d.nombre_presentacion)}</td><td>${Number(d.cantidad)}</td><td>${dinero(d.precio_unitario)}</td><td>${dinero(d.subtotal)}</td></tr>`).join('')}</tbody>
-        </table>
-        <div class="factura-resumen">
-            <p>Subtotal: ${dinero(venta.subtotal)}</p>
-            <p>Descuento: ${dinero(venta.descuento)}</p>
-            <p>Impuesto: ${dinero(venta.impuesto || 0)}</p>
-            <p>Total: ${dinero(venta.total)}</p>
-            ${venta.metodo_pago === 'Efectivo' ? `<p>Recibido: ${dinero(venta.monto_recibido)}</p><p>Cambio: ${dinero(venta.cambio)}</p>` : ''}
-        </div>`;
+    $('factura-documento').innerHTML = window.renderizarFactura({ venta, detalle }, id);
     $('factura-detalle').hidden = false;
 }
 $('buscar-factura').addEventListener('input', pintar);
@@ -54,8 +35,12 @@ $('salir').addEventListener('click', async () => { try { await window.farmacia.c
         await cargar();
         $('pagina-facturas').hidden = false;
         mensaje('');
-        const id = new URLSearchParams(window.location.search).get('id');
-        if (id) await mostrarFactura(Number(id));
+        const parametros = new URLSearchParams(window.location.search);
+        const id = parametros.get('id');
+        if (id) {
+            await mostrarFactura(Number(id));
+            if (parametros.get('imprimir') === '1') window.print();
+        }
         window.addEventListener('focus', () => { cargar().catch(() => {}); });
         document.addEventListener('visibilitychange', () => { if (!document.hidden) { cargar().catch(() => {}); } });
         setInterval(() => { cargar().catch(() => {}); }, 5000);
