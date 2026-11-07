@@ -15,10 +15,22 @@
 
 <p id="facturas-mensaje" role="status" aria-live="polite">Verificando sesión...</p>
 <section id="pagina-facturas" hidden>
-<div class="controles-facturas"><a href="ventas.html">Registrar una venta</a><h1>Facturas de venta</h1>
+<div class="controles-facturas"><h1>Facturas de venta</h1>
 <label for="buscar-factura">Buscar por factura o DNI</label><input id="buscar-factura" type="search">
+</div>
 <div class="tabla-contenedor"><table><thead><tr><th>ID</th><th>Factura</th><th>DNI</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead><tbody id="facturas-filas"></tbody></table></div></div>
-<section id="factura-detalle" class="caja" hidden><div id="factura-documento" class="factura-documento"></div><button id="imprimir" type="button">Imprimir factura</button></section>
 </section>
 </main>
+<dialog id="factura-detalle" aria-labelledby="factura-detalle-titulo">
+    <header class="factura-modal-cabecera">
+        <h2 id="factura-detalle-titulo">Detalle de factura</h2>
+    </header>
+    <div class="factura-modal-cuerpo">
+        <div id="factura-documento" class="factura-documento"></div>
+    </div>
+    <footer class="factura-modal-acciones">
+        <button id="cerrarFactura" type="button" autofocus>Cerrar</button>
+        <button id="imprimir" type="button">Imprimir factura</button>
+    </footer>
+</dialog>
 </body></html>

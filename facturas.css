@@ -1,8 +1,29 @@
 #factura-detalle {
-    display: grid;
-    place-items: center;
-    gap: 1rem;
+    width: min(30rem, calc(100% - 2rem));
+    max-height: calc(100% - 2rem);
+    padding: 0;
+    overflow: hidden;
+    color: #182b42;
+    background: #fff;
+    border: 1px solid #dce7f4;
+    border-radius: 1rem;
+    box-shadow: 0 24px 70px rgb(13 35 64 / 25%);
 }
+#factura-detalle[open] { display: flex; flex-direction: column; }
+#factura-detalle::backdrop { background: rgb(13 27 49 / 52%); }
+.factura-modal-cabecera, .factura-modal-acciones { padding: .8rem 1rem; background: #f4f8fd; }
+.factura-modal-cabecera { border-bottom: 1px solid #dce7f4; }
+.factura-modal-cabecera h2 { margin: 0; font-size: 1.05rem; }
+.factura-modal-cuerpo { min-height: 0; overflow: auto; padding: 1rem; }
+.factura-modal-cuerpo .factura-documento { margin-inline: auto; }
+.factura-modal-acciones {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: .5rem;
+    border-top: 1px solid #dce7f4;
+}
+#cerrarFactura { background: #fff; color: #28476b; border: 1px solid #d2dfef; box-shadow: none; }
 
 .factura-documento {
     box-sizing: border-box;
@@ -60,10 +81,23 @@
 
 @media print {
     @page { margin: 4mm; }
-    .cabecera, .controles-facturas, #facturas-mensaje, #pagina-facturas > .tabla-contenedor, #imprimir { display: none !important; }
     body[data-module="facturas"] { background: white; color: black; }
-    body[data-module="facturas"] .contenido { max-width: none; margin: 0; padding: 0; }
-    #factura-detalle { display: block; margin: 0; padding: 0; border: none; box-shadow: none; }
+    body[data-module="facturas"]:has(#factura-detalle[open]) > :not(#factura-detalle),
+    .factura-modal-cabecera, .factura-modal-acciones { display: none !important; }
+    #factura-detalle[open] {
+        display: block;
+        position: static;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        border: 0;
+        box-shadow: none;
+    }
+    #factura-detalle::backdrop { background: transparent; }
+    .factura-modal-cuerpo { padding: 0; overflow: visible; }
     .factura-documento {
         width: min(100%, 72mm);
         margin-inline: auto;

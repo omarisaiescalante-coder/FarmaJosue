@@ -37,18 +37,38 @@ function restante(fechaVenc) {
 function textoTiempo(r) {
     if (r.vencido) return 'Vencido';
     if (r.dias === 0) return 'Vence hoy';
-    return [plural(r.a, 'año', 'años'), plural(r.me, 'mes', 'meses'), plural(r.di, 'día', 'días')].join(', ');
+    const partes = [
+        r.a && plural(r.a, 'año', 'años'),
+        r.me && plural(r.me, 'mes', 'meses'),
+        r.di && plural(r.di, 'día', 'días'),
+    ].filter(Boolean);
+    return 'Vence en ' + partes.join(', ');
 }
 
 /* ---------- Precios y stock ---------- */
 function htmlPrecios(pres) {
     const conPrecio = pres.filter(p => p.precio != null);
     if (!conPrecio.length) return '<span class="med-sin">Sin precios registrados</span>';
-    if (pres.length === 1) return `<span class="med-precio">${dinero(conPrecio[0].precio)}<small>${escapar(nombrePres(conPrecio[0].nombre))}</small></span>`;
-    return conPrecio.map(p => `<span class="med-precio">${dinero(p.precio)}<small>${escapar(nombrePres(p.nombre))}</small></span>`).join('');
+    return conPrecio.map(p => `<span class="med-precio">${p.desde ? 'Desde ' : ''}${dinero(p.precio)}<small>${escapar(nombrePres(p.nombre))}</small></span>`).join('');
 }
 
-// Convierte la cantidad del lote en cajas / blísteres / unidades (solo si hay equivalencias registradas).
+function preciosResumen(presentaciones) {
+    const porNombre = new Map();
+    for (const { nombre, precio } of presentaciones) {
+        if (precio == null) continue;
+        const etiqueta = nombrePres(nombre);
+        const precios = porNombre.get(etiqueta);
+        if (precios) {
+            precios.minimo = Math.min(precios.minimo, precio);
+            precios.maximo = Math.max(precios.maximo, precio);
+        } else {
+            porNombre.set(etiqueta, { minimo: precio, maximo: precio });
+        }
+    }
+    return [...porNombre].map(([nombre, precios]) => ({
+        nombre, precio: precios.minimo, desde: precios.minimo !== precios.maximo,
+    }));
+}
 
 function htmlLotes(m) {
     if (!m.lotes.length) return '<p class="med-sin">No hay lotes registrados.</p>';
@@ -68,33 +88,35 @@ function htmlLotes(m) {
 /* ---------- Tarjetero ---------- */
 async function cargarMedicamentos() {
     catalogo = await solicitar(window.farmacia.listarMedicamentos());
-    $('tarjetero').innerHTML = catalogo.map(m => `<article class="med-card" tabindex="0">
-        <div class="med-head"><h3 class="med-nombre">${escapar(m.nombre)}</h3><p class="med-cat">${escapar(m.categoria || 'Sin categoría')}</p></div>
-        <div class="med-detalle">
-            <p class="med-sec">Precio</p><div class="med-precios">${htmlPrecios(m.presentaciones)}</div>
-            <p class="med-sec">Lotes y stock</p>${htmlLotes(m)}
-            <button type="button" class="med-editar" data-editar="${m.id_medicamento}">Editar</button>
+    $('tarjetero').innerHTML = catalogo.map(m => `<article class="med-card">
+        <div class="med-head">
+            <h3 class="med-nombre">${escapar(m.nombre)}</h3>
+            <p class="med-cat">${escapar(m.categoria || 'Sin categoría')}</p>
         </div>
+        <div class="med-resumen">
+            <span class="med-existencias"><strong>${Number(m.stock_total || 0).toLocaleString('es-HN')}</strong> en inventario</span>
+            <div class="med-precios" aria-label="Precios registrados">${htmlPrecios(preciosResumen(m.presentaciones))}</div>
+        </div>
+        <button type="button" class="med-editar" data-editar="${m.id_medicamento}">Editar</button>
+        ${m.lotes.length ? `<details class="med-detalle">
+            <summary>Ver lotes <span>${m.lotes.length}</span></summary>
+            <div class="med-lista-lotes">${htmlLotes(m)}</div>
+        </details>` : '<p class="med-sin">Sin lotes registrados</p>'}
     </article>`).join('') || '<p>No hay medicamentos registrados.</p>';
 }
 
 $('tarjetero').addEventListener('click', evento => {
     const boton = evento.target.closest('[data-editar]');
-    if (boton) {
-        mensaje('');
-        const med = catalogo.find(m => m.id_medicamento === Number(boton.dataset.editar));
-        if (!med) return;
-        $('id_medicamento').value = med.id_medicamento;
-        $('nombre').value = med.nombre;
-        $('categoria').value = med.categoria || '';
-        $('restriccion').value = med.restriccion;
-        $('editarMedicamento').hidden = false;
-        $('nombre').focus();
-        return;
-    }
-    // En pantallas táctiles (sin mouse) un toque abre o cierra la tarjeta
-    const card = evento.target.closest('.med-card');
-    if (card && window.matchMedia('(hover: none)').matches) card.classList.toggle('abierta');
+    if (!boton) return;
+    const med = catalogo.find(m => m.id_medicamento === Number(boton.dataset.editar));
+    if (!med) return;
+    mensaje('');
+    $('id_medicamento').value = med.id_medicamento;
+    $('nombre').value = med.nombre;
+    $('categoria').value = med.categoria || '';
+    $('restriccion').value = med.restriccion;
+    $('editarMedicamento').hidden = false;
+    $('nombre').focus();
 });
 
 $('formEditar').addEventListener('submit', async evento => {
