@@ -6,7 +6,6 @@ let carrito = new Map();     // id_presentacion -> línea de la venta
 let edadManual = false;      // true si el cajero escribió la edad a mano
 let dniTocado = false;       // true cuando el cajero salió del campo DNI
 let guardandoVenta = false;
-let temporizadorMensaje = null; // oculta solo los mensajes de éxito
 
 const $ = (id) => document.getElementById(id);
 const escapar = (t) => String(t ?? '').replace(/[&<>"']/g, (c) =>
@@ -14,15 +13,36 @@ const escapar = (t) => String(t ?? '').replace(/[&<>"']/g, (c) =>
 const lempiras = (centavos) => 'L. ' + (centavos / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-function mostrarMensaje(texto, tipo = 'danger') {
-    const caja = $('message');
-    clearTimeout(temporizadorMensaje);
-    caja.className = 'alert alert-' + tipo;
-    caja.textContent = texto;
-    // Los avisos de éxito desaparecen solos a los pocos segundos.
-    if (tipo === 'success') temporizadorMensaje = setTimeout(ocultarMensaje, 4000);
+// Notificaciones pequeñas tipo burbuja: aparecen unos segundos y se quitan solas.
+// El contenedor es un popover (capa superior), así se ve también sobre los diálogos abiertos.
+const DURACION_TOAST = { success: 2500, info: 2500, warning: 3500, danger: 3500 };
+function quitarToast(toast) {
+    const cont = $('toastContenedor');
+    if (!toast.isConnected) return;
+    toast.classList.add('saliendo');
+    setTimeout(() => {
+        toast.remove();
+        if (!cont.children.length && cont.matches(':popover-open')) cont.hidePopover();
+    }, 250);
 }
-const ocultarMensaje = () => { clearTimeout(temporizadorMensaje); $('message').className = 'alert d-none'; };
+function mostrarMensaje(texto, tipo = 'danger') {
+    if (!texto) return;
+    const cont = $('toastContenedor');
+    [...cont.children].forEach((t) => { if (t.dataset.texto === texto) t.remove(); });   // sin duplicados
+    while (cont.children.length >= 3) cont.firstElementChild.remove();
+    const toast = document.createElement('div');
+    toast.className = 'toast-burbuja toast-' + tipo;
+    toast.setAttribute('role', tipo === 'danger' ? 'alert' : 'status');
+    toast.dataset.texto = texto;
+    toast.textContent = texto;
+    cont.append(toast);
+    // Se reabre para quedar por encima de cualquier diálogo que se haya abierto después.
+    if (cont.matches(':popover-open')) cont.hidePopover();
+    cont.showPopover();
+    setTimeout(() => quitarToast(toast), DURACION_TOAST[tipo] || 3500);
+}
+// Al corregir un error (por ejemplo, ya hay cantidad válida) se retiran los avisos de error.
+const ocultarMensaje = () => $('toastContenedor').querySelectorAll('.toast-danger').forEach(quitarToast);
 
 const lineas = () => [...carrito.values()];
 const hayReceta = () => lineas().some((l) => l.restriccion === 'Con Receta Medica');
@@ -36,6 +56,11 @@ function etiqueta(pres) {
 }
 
 // ---------- Búsqueda de medicamentos ----------
+// Unidades de un medicamento (en su lote visible) que ya están en la venta actual.
+const reservadasEnLote = (idMed, idLote) => lineas()
+    .filter((l) => l.id_medicamento === idMed && (idLote == null || l.id_lote == null || l.id_lote === idLote))
+    .reduce((s, l) => s + l.cantidad * l.unidades_stock, 0);
+
 function pintarResultados() {
     const q = normalizar($('buscarMedicamento').value.trim());
     const lista = catalogo.medicamentos.filter((m) => normalizar(m.nombre).includes(q)).slice(0, 50);
@@ -55,7 +80,8 @@ function pintarResultados() {
         const vence = lote?.vence_lote ? ' · Vence ' + lote.vence_lote.split('-').reverse().join('/') : '';
         const existencias = lote
             ? (lote.numero_lote ? 'Lote ' + lote.numero_lote + vence + ': ' : '')
-                + window.textoStockEmpaque(lote, lote.cantidad_disponible ?? m.stock_total)
+                + window.textoStockEmpaque(lote, Math.max(0,
+                    Number(lote.cantidad_disponible ?? m.stock_total) - reservadasEnLote(m.id_medicamento, lote.id_lote)))
             : '';
         return `<div class="list-group-item">
             <div class="d-flex justify-content-between align-items-center">
@@ -82,6 +108,7 @@ function cambiarCantidad(id, delta) {
         ocultarMensaje();
     }
     pintarCarrito();
+    pintarResultados();
     actualizarVenta();
 }
 
@@ -189,9 +216,15 @@ function pintarCarrito() {
 function actualizarVenta() {
     const calc = calcular();
     $('resSubtotal').textContent = lempiras(calc.subtotal);
-    const nombre = C.nombreDescuento(calc.porcentajeDescuento);
-    $('resDescuentoEtiqueta').textContent = nombre ? `Descuento ${nombre} (${calc.porcentajeDescuento} %)` : 'Descuento';
-    $('resDescuento').textContent = calc.descuento ? '− ' + lempiras(calc.descuento) : lempiras(0);
+    // Los dos descuentos por edad siempre se muestran; solo se aplica (y resalta) el que corresponde a la edad.
+    [['resDescTercera', C.EDAD_TERCERA ?? 60, C.DESCUENTO_TERCERA ?? 25, 'tercera edad'],
+     ['resDescCuarta', C.EDAD_CUARTA ?? 80, C.DESCUENTO_CUARTA ?? 30, 'cuarta edad']].forEach(([id, desde, porcentaje, nombre]) => {
+        const activo = calc.porcentajeDescuento === porcentaje;
+        $(id + 'Etiqueta').textContent = `Descuento ${nombre} (${desde}+ años · ${porcentaje} %)`;
+        $(id).textContent = activo && calc.descuento ? '− ' + lempiras(calc.descuento) : lempiras(0);
+        $(id + 'Etiqueta').classList.toggle('descuento-activo', activo);
+        $(id).classList.toggle('descuento-activo', activo);
+    });
     $('resIsvEtiqueta').textContent = `ISV (${C.TASA_ISV} %)`;
     $('resIsv').textContent = lempiras(calc.isv);
     $('resTotal').textContent = lempiras(calc.total);
@@ -237,6 +270,7 @@ document.addEventListener('click', (e) => {
     else if (quitar) {
         carrito.delete(Number(quitar.dataset.quitar));
         pintarCarrito();
+        pintarResultados();
         actualizarVenta();
     }
 });
@@ -255,14 +289,44 @@ $('carrito').addEventListener('input', (e) => {
             lempiras(linea.precioCentavos * linea.cantidad);
         ocultarMensaje();
     }
+    pintarResultados();
     actualizarVenta();
 });
 
 // El DNI se escribe solo con números: el sistema coloca los guiones.
-$('dni').addEventListener('input', () => {
-    $('dni').value = C.formatearDni($('dni').value);
+// El cursor se queda donde el cajero está editando (no salta al final).
+let dniAnterior = '';
+const posicionTrasDigitos = (texto, n) => {
+    if (n <= 0) return 0;
+    let vistos = 0;
+    for (let i = 0; i < texto.length; i++) if (/\d/.test(texto[i]) && ++vistos === n) return i + 1;
+    return texto.length;
+};
+$('dni').addEventListener('input', (e) => {
+    const campo = $('dni');
+    const cursor = campo.selectionStart ?? campo.value.length;
+    let digitos = campo.value.replace(/\D/g, '');
+    let antes = campo.value.slice(0, cursor).replace(/\D/g, '').length;
+    let formateado = C.formatearDni(digitos);
+
+    // Si se borró solo un guion, se borra el dígito vecino para que el borrado avance.
+    if (formateado === dniAnterior && /^delete(Content|Word)(Backward|Forward)$/.test(e.inputType || '')) {
+        const atras = /Backward$/.test(e.inputType);
+        const i = atras ? antes - 1 : antes;
+        if (i >= 0 && i < digitos.length) {
+            digitos = digitos.slice(0, i) + digitos.slice(i + 1);
+            antes = i;
+            formateado = C.formatearDni(digitos);
+        }
+    }
+
+    campo.value = formateado;
+    dniAnterior = formateado;
+    const pos = posicionTrasDigitos(formateado, Math.min(antes, 13));
+    campo.setSelectionRange(pos, pos);
+
     if (!edadManual) {
-        const edad = C.edadDesdeDni($('dni').value);
+        const edad = C.edadDesdeDni(formateado);
         $('edad').value = edad === null ? '' : edad;
     }
     actualizarVenta();
@@ -270,6 +334,7 @@ $('dni').addEventListener('input', () => {
 $('dni').addEventListener('blur', () => { dniTocado = true; actualizarVenta(); });
 $('edad').addEventListener('input', () => { edadManual = $('edad').value !== ''; actualizarVenta(); });
 $('metodoPago').addEventListener('change', actualizarVenta);
+
 $('recibido').addEventListener('input', actualizarVenta);
 
 const dialogoVenta = $('dialogoVenta');
@@ -350,7 +415,7 @@ $('continuarVenta').addEventListener('click', async () => {
     if (guardandoVenta) return;
     const error = errorVenta(calcular());
     if (error) {
-        $('errorConfirmacionVenta').textContent = error;
+        mostrarMensaje(error);
         return;
     }
 
@@ -372,7 +437,7 @@ $('continuarVenta').addEventListener('click', async () => {
         carrito.clear();
         pintarCarrito();
         $('dni').value = ''; $('edad').value = ''; $('recibido').value = '';
-        edadManual = false; dniTocado = false;
+        edadManual = false; dniTocado = false; dniAnterior = '';
         ocultarMensaje();
         actualizarVenta();
 
@@ -396,7 +461,7 @@ $('continuarVenta').addEventListener('click', async () => {
             mostrarMensaje('La venta quedó registrada. No se pudo actualizar la pantalla.', 'warning');
         }
     } catch (error) {
-        $('errorConfirmacionVenta').textContent = error.message || 'No se pudo guardar la venta.';
+        mostrarMensaje(error.message || 'No se pudo guardar la venta.');
     } finally {
         guardandoVenta = false;
         $('continuarVenta').disabled = false;
@@ -479,8 +544,8 @@ async function consultarReporte() {
         $('reporteDescargar').disabled = false;
     } catch (error) {
         if (solicitud !== solicitudReporte) return;
-        $('reporteEstado').classList.add('reporte-ventas-error');
-        $('reporteEstado').textContent = error.message || 'No se pudo consultar el reporte.';
+        $('reporteEstado').textContent = '';
+        mostrarMensaje(error.message || 'No se pudo consultar el reporte.');
     }
 }
 
@@ -498,12 +563,13 @@ async function descargarReporte() {
         if (!window.farmacia.guardarReporteVentasPDF) throw new Error('Reiniciá la aplicación para activar Guardar PDF.');
         const r = await window.farmacia.guardarReporteVentasPDF(reporteActual);
         if (r.error) throw new Error(r.error);
-        estado.textContent = r.datos.cancelado ? 'Guardado cancelado.' : '';
+        estado.textContent = '';
+        mostrarMensaje(r.datos.cancelado ? 'Guardado cancelado.' : 'PDF guardado.', r.datos.cancelado ? 'info' : 'success');
     } catch (error) {
-        estado.classList.add('reporte-ventas-error');
-        estado.textContent = /No handler registered/.test(error.message)
+        estado.textContent = '';
+        mostrarMensaje(/No handler registered/.test(error.message)
             ? 'Reiniciá la aplicación para activar Guardar PDF.'
-            : error.message || 'No se pudo guardar el PDF.';
+            : error.message || 'No se pudo guardar el PDF.');
     } finally {
         guardandoReportePdf = false;
         for (const [control, deshabilitado] of controles) control.disabled = deshabilitado;

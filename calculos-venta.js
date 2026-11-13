@@ -1,4 +1,3 @@
-
 (function (raiz, fabrica) {
     if (typeof module === 'object' && module.exports) {
         module.exports = fabrica();
@@ -11,6 +10,8 @@
     const TASA_ISV = 15;
     const EDAD_TERCERA = 60;
     const DESCUENTO_TERCERA = 25;
+    const EDAD_CUARTA = 80;
+    const DESCUENTO_CUARTA = 30;
 
     // Formatear DNI
     function formatearDni(valor) {
@@ -47,7 +48,7 @@
         return hoy.getFullYear() - Number(String(dni).slice(5, 9));
     }
 
-    // Único descuento: tercera edad, a partir de los 60 años
+    // Descuentos por edad (no se acumulan): tercera edad desde los 60 años (25 %) y cuarta edad desde los 80 (30 %)
     function porcentajeDescuento(edad) {
         if (
             edad === null ||
@@ -58,12 +59,16 @@
             return 0;
         }
 
+        if (Number(edad) >= EDAD_CUARTA) return DESCUENTO_CUARTA;
+
         return Number(edad) >= EDAD_TERCERA
             ? DESCUENTO_TERCERA
             : 0;
     }
 
     function nombreDescuento(porcentaje) {
+        if (porcentaje === DESCUENTO_CUARTA) return 'cuarta edad';
+
         return porcentaje === DESCUENTO_TERCERA
             ? 'tercera edad'
             : '';
@@ -89,7 +94,7 @@
 
             const importe = linea.precio * linea.cantidad;
 
-            // Aplicar descuento únicamente a personas de 60 años o más
+            // Aplicar descuento únicamente a personas de 60 años o más (30 % desde los 80)
             const rebaja = Math.round(
                 importe * porcentaje / 100
             );
@@ -146,6 +151,10 @@
 
     return {
         TASA_ISV,
+        EDAD_TERCERA,
+        DESCUENTO_TERCERA,
+        EDAD_CUARTA,
+        DESCUENTO_CUARTA,
         formatearDni,
         dniValido,
         edadDesdeDni,

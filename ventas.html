@@ -20,7 +20,8 @@
     <main class="container-fluid p-4">
         
         <h1>Ventas</h1>
-        <div id="message" class="alert d-none" role="alert"></div>
+        <!-- Notificaciones tipo burbuja (se rellenan desde venta-pantallas.js) -->
+        <div id="toastContenedor" popover="manual" aria-live="polite"></div>
 
         <div class="row g-4 mb-4 ventas-ingreso">
             <!-- Columna izquierda: cliente, vendedor y búsqueda de medicamentos -->
@@ -65,7 +66,8 @@
 
                     <dl class="row mb-0 mt-2">
                         <dt class="col-7 fw-normal">Subtotal</dt><dd id="resSubtotal" class="col-5 text-end">L. 0.00</dd>
-                        <dt id="resDescuentoEtiqueta" class="col-7 fw-normal">Descuento</dt><dd id="resDescuento" class="col-5 text-end">L. 0.00</dd>
+                        <dt id="resDescTerceraEtiqueta" class="col-7 fw-normal descuento-fila">Descuento tercera edad</dt><dd id="resDescTercera" class="col-5 text-end descuento-fila">L. 0.00</dd>
+                        <dt id="resDescCuartaEtiqueta" class="col-7 fw-normal descuento-fila">Descuento cuarta edad</dt><dd id="resDescCuarta" class="col-5 text-end descuento-fila">L. 0.00</dd>
                         <dt id="resIsvEtiqueta" class="col-7 fw-normal">ISV</dt><dd id="resIsv" class="col-5 text-end">L. 0.00</dd>
                         <dt class="col-7 fs-5 border-top pt-2">Total a pagar</dt><dd id="resTotal" class="col-5 text-end fs-5 fw-bold border-top pt-2">L. 0.00</dd>
                     </dl>
@@ -205,7 +207,7 @@
                         <option value="hoy">Hoy</option>
                         <option value="semana">Últimos 7 días</option>
                         <option value="mes">Este mes</option>
-                        <option value="personalizado">Personalizado</option>
+                        <option value="" disabled hidden>Rango de fechas</option>
                     </select>
                 </div>
                 <div>

@@ -1428,3 +1428,26 @@ body[data-module="ventas"] .ventas-resumen > .d-flex { gap: 12px; flex-wrap: wra
     .imprimiendo-reporte-ventas #modalReporte .reporte-ventas-tabla th,
     .imprimiendo-reporte-ventas #modalReporte .reporte-ventas-tabla td { padding: .35rem; font-size: 8.5pt; }
 }
+
+/* Notificaciones tipo burbuja (ventas) */
+#toastContenedor {
+    inset: auto 20px 20px auto; margin: 0; padding: 0; border: 0; background: transparent;
+    overflow: visible; width: min(340px, calc(100vw - 40px)); max-width: none;
+}
+#toastContenedor:popover-open { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.toast-burbuja {
+    max-width: 100%; padding: 10px 16px; border-radius: 18px 18px 4px 18px; font-size: .9rem; line-height: 1.3;
+    font-family: 'Segoe UI', Arial, sans-serif; color: #fff; background: #2463df;
+    box-shadow: 0 8px 24px #12346540; animation: toast-entrada .22s ease-out;
+}
+.toast-burbuja.toast-success { background: #2463df; }
+.toast-burbuja.toast-info    { background: #123465; }
+.toast-burbuja.toast-warning { background: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
+.toast-burbuja.toast-danger  { background: #f8d7da; color: #842029; border: 1px solid #f1aeb5; }
+.toast-burbuja.saliendo { opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .25s; }
+@keyframes toast-entrada { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .toast-burbuja { animation: none; } }
+
+/* Descuentos por edad en el resumen de ventas: siempre visibles, resaltado el que se aplica */
+.descuento-fila { color: #7f8fa6; }
+.descuento-fila.descuento-activo { color: #2463df; font-weight: 600; }
