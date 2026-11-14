@@ -3,6 +3,11 @@
 El sistema utiliza once tablas: usuarios, medicamentos, medicamento_presentaciones,
 distribuidores, compras, lote, lote_ediciones, clientes, ventas, detalles_venta y detalle_venta_lotes.
 
+La conexión predeterminada corresponde a XAMPP: `localhost`, puerto `3307`,
+usuario `root`, contraseña vacía y base `JosueFarma`. Para otros servidores,
+configurar `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` y `DB_NAME` en el entorno
+antes de iniciar la aplicación.
+
 Para una base existente, cerrar la aplicacion y ejecutar npm run migrar.
 El comando guarda primero un respaldo SQL en respaldos/ y agrega los campos y tablas
 faltantes sin eliminar registros ni columnas historicas. Se puede ejecutar nuevamente.
