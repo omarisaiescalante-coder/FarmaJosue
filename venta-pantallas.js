@@ -236,6 +236,21 @@ function actualizarVenta() {
     $('guardarButton').disabled = guardandoVenta || Boolean(error);
 }
 
+function limpiarVenta() {
+    carrito.clear();
+    $('buscarMedicamento').value = '';
+    $('dni').value = '';
+    $('edad').value = '';
+    $('recibido').value = '';
+    $('metodoPago').value = 'Efectivo';
+    edadManual = false;
+    dniTocado = false;
+    ocultarMensaje();
+    pintarResultados();
+    pintarCarrito();
+    actualizarVenta();
+}
+
 // ---------- Registro de ventas ----------
 $('alternarRegistroVentas')?.addEventListener('click', (e) => {
     const registro = $('registroVentas');
@@ -259,6 +274,7 @@ async function cargarTabla() {
 
 // ---------- Eventos ----------
 $('buscarMedicamento').addEventListener('input', pintarResultados);
+$('limpiarVentaButton').addEventListener('click', limpiarVenta);
 
 // El botón + de la búsqueda y de la tabla de resumen funciona igual.
 document.addEventListener('click', (e) => {

@@ -5,7 +5,6 @@
     const fila = (etiqueta, valor) => `<dt>${etiqueta}</dt><dd>${escapar(valor)}</dd>`;
 
     function renderizarArticulo(articulo) {
-        const lotes = articulo.lotes || [];
         return `
             <li class="factura-articulo">
                 <div class="factura-articulo-cabecera">
@@ -13,9 +12,6 @@
                     <strong>${dinero(articulo.subtotal)}</strong>
                 </div>
                 <p>${Number(articulo.cantidad)} × ${escapar(articulo.nombre_presentacion || 'Unidad')} · ${dinero(articulo.precio_unitario)} c/u</p>
-                ${lotes.length ? `<ul class="factura-lotes">
-                    ${lotes.map(lote => `<li>Lote ${escapar(lote.numero_lote)} · Vence ${escapar(fecha(lote.vence_lote))} · ${Number(lote.cantidad_unidades)} unid.</li>`).join('')}
-                </ul>` : '<p class="factura-lotes">Lote sin registro en esta venta</p>'}
             </li>`;
     }
 

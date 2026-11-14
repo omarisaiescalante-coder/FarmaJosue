@@ -86,9 +86,13 @@
                         <div id="resCambio" class="fs-5 fw-semibold" aria-live="polite">Cambio: —</div>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
                         <small id="estadoVenta" class="text-danger"></small>
-                        <button id="guardarButton" class="btn btn-success" type="button" disabled>Guardar venta</button>
+                        <div class="d-flex gap-2">
+                            <button id="limpiarVentaButton" class="btn btn-outline-secondary" type="button"
+                                    title="Limpia los datos que estaba ingresando a la venta">Limpiar</button>
+                            <button id="guardarButton" class="btn btn-success" type="button" disabled>Guardar venta</button>
+                        </div>
                     </div>
                 </section>
             </div>

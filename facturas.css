@@ -62,12 +62,11 @@
     border-top: 1px dashed #a6b6ad;
 }
 .factura-seccion h3 { margin: 0 0 .35rem; font-size: .85rem; }
-.factura-articulos, .factura-lotes { margin: 0; padding: 0; list-style: none; }
+.factura-articulos { margin: 0; padding: 0; list-style: none; }
 .factura-articulo { padding: .5rem 0; border-bottom: 1px solid #e2ebe6; break-inside: avoid; }
 .factura-articulo:last-child { border-bottom: 0; }
 .factura-articulo-cabecera { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; }
 .factura-articulo p { margin: .12rem 0; }
-.factura-lotes { color: #3e574a; font-size: .76rem; }
 .factura-importes { margin: 0; padding: 0; border: 0; font-variant-numeric: tabular-nums; }
 .factura-datos .factura-total {
     margin-top: .3rem;
