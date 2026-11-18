@@ -63,7 +63,7 @@ const reservadasEnLote = (idMed, idLote) => lineas()
 
 function pintarResultados() {
     const q = normalizar($('buscarMedicamento').value.trim());
-    const lista = catalogo.medicamentos.filter((m) => normalizar(m.nombre).includes(q)).slice(0, 50);
+    const lista = catalogo.medicamentos.filter((m) => normalizar(m.nombre).includes(q) || normalizar(m.codigo).includes(q)).slice(0, 50);
     const porMedicamento = new Map();
     for (const pres of catalogo.presentaciones) {
         const idLote = pres.id_lote_catalogo ?? pres.id_lote;
@@ -77,11 +77,10 @@ function pintarResultados() {
     $('resultados').innerHTML = lista.map((m) => {
         const pres = porMedicamento.get(m.id_medicamento)?.presentaciones || [];
         const lote = pres[0];
-        const vence = lote?.vence_lote ? ' · Vence ' + lote.vence_lote.split('-').reverse().join('/') : '';
         const existencias = lote
-            ? (lote.numero_lote ? 'Lote ' + lote.numero_lote + vence + ': ' : '')
-                + window.textoStockEmpaque(lote, Math.max(0,
-                    Number(lote.cantidad_disponible ?? m.stock_total) - reservadasEnLote(m.id_medicamento, lote.id_lote)))
+            ? window.textoStockEmpaque(lote, Math.max(0,
+                    Number(lote.cantidad_disponible ?? m.stock_total) - reservadasEnLote(m.id_medicamento, lote.id_lote))
+            )
             : '';
         return `<div class="list-group-item">
             <div class="d-flex justify-content-between align-items-center">
@@ -220,7 +219,7 @@ function actualizarVenta() {
     [['resDescTercera', C.EDAD_TERCERA ?? 60, C.DESCUENTO_TERCERA ?? 25, 'tercera edad'],
      ['resDescCuarta', C.EDAD_CUARTA ?? 80, C.DESCUENTO_CUARTA ?? 30, 'cuarta edad']].forEach(([id, desde, porcentaje, nombre]) => {
         const activo = calc.porcentajeDescuento === porcentaje;
-        $(id + 'Etiqueta').textContent = `Descuento ${nombre} (${desde}+ años · ${porcentaje} %)`;
+        $(id + 'Etiqueta').textContent = `Descuento ${nombre} (${porcentaje}%)`;
         $(id).textContent = activo && calc.descuento ? '− ' + lempiras(calc.descuento) : lempiras(0);
         $(id + 'Etiqueta').classList.toggle('descuento-activo', activo);
         $(id).classList.toggle('descuento-activo', activo);
@@ -232,7 +231,7 @@ function actualizarVenta() {
     actualizarDni();
     actualizarPago(calc);
     const error = errorVenta(calc);
-    $('estadoVenta').textContent = error || '';
+    $('estadoVenta').textContent = carrito.size ? (error || '') : '';   // sin aviso rojo cuando no hay medicamentos
     $('guardarButton').disabled = guardandoVenta || Boolean(error);
 }
 
@@ -348,7 +347,9 @@ $('dni').addEventListener('input', (e) => {
     actualizarVenta();
 });
 $('dni').addEventListener('blur', () => { dniTocado = true; actualizarVenta(); });
-$('edad').addEventListener('input', () => { edadManual = $('edad').value !== ''; actualizarVenta(); });
+$('edad').addEventListener('input', () => {
+    $('edad').value = $('edad').value.replace(/\D/g, '').slice(0, 3);   // solo números, máximo 3 dígitos
+    edadManual = $('edad').value !== ''; actualizarVenta(); });
 $('metodoPago').addEventListener('change', actualizarVenta);
 
 $('recibido').addEventListener('input', actualizarVenta);
