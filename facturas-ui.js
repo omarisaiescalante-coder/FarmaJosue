@@ -6,11 +6,17 @@ let ventas = [];
 let solicitudFactura = 0;
 function mensaje(texto) { setText('facturas-mensaje', texto); }
 async function solicitar(promesa) { const r = await promesa; if (r.error) throw new Error(r.error); return r.datos; }
+function formatearDniBusqueda(valor) {
+    const digitos = String(valor ?? '').replace(/\D/g, '').slice(0, 13);
+    return [digitos.slice(0, 4), digitos.slice(4, 8), digitos.slice(8)].filter(Boolean).join('-');
+}
 function pintar() {
     const buscar = $('buscar-factura').value.trim().toLowerCase();
-    $('facturas-filas').innerHTML = ventas.filter(v => [String(v.id_venta), v.numero_factura, v.dni_cliente].some(x => String(x || '').toLowerCase().includes(buscar))).map(v => `<tr>
-        <td>${Number(v.id_venta)}</td><td>${escapar(v.numero_factura)}</td><td>${escapar(v.dni_cliente || 'Sin DNI')}</td><td>${escapar(v.fecha_venta)}</td><td>${escapar(v.estado)}</td><td>${dinero(v.total)}</td>
-        <td><button type="button" data-factura="${v.id_venta}">Ver factura</button></td></tr>`).join('') || '<tr><td colspan="7">No hay facturas para mostrar.</td></tr>';
+    const buscarDigitos = buscar.replace(/\D/g, '');
+    $('facturas-filas').innerHTML = ventas.filter(v => [String(v.id_venta), v.numero_factura].some(x => String(x || '').toLowerCase().includes(buscar)) ||
+        (buscarDigitos && String(v.dni_cliente || '').replace(/\D/g, '').includes(buscarDigitos))).map(v => `<tr>
+        <td>${Number(v.id_venta)}</td><td>${escapar(v.numero_factura)}</td><td>${escapar(v.fecha_venta)}</td><td>${escapar(v.estado)}</td><td>${dinero(v.total)}</td>
+        <td><button type="button" data-factura="${v.id_venta}">Ver factura</button></td></tr>`).join('') || '<tr><td colspan="6">No hay facturas para mostrar.</td></tr>';
 }
 async function cargar() { ventas = await solicitar(window.farmacia.listarVentas()); pintar(); }
 async function mostrarFactura(id) {
@@ -30,7 +36,11 @@ async function mostrarFactura(id) {
         return false;
     }
 }
-$('buscar-factura').addEventListener('input', pintar);
+$('buscar-factura').addEventListener('input', () => {
+    const campo = $('buscar-factura');
+    if (/^[\d-]*$/.test(campo.value)) campo.value = formatearDniBusqueda(campo.value);
+    pintar();
+});
 $('facturas-filas').addEventListener('click', async e => {
     const boton = e.target.closest('[data-factura]');
     if (boton && await mostrarFactura(Number(boton.dataset.factura))) mensaje('');

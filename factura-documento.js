@@ -27,7 +27,6 @@
             ${fila('Fecha', [fecha(venta.fecha_venta), String(venta.fecha_venta || '').slice(11, 19)].filter(Boolean).join(' '))}
             ${fila('Estado', venta.estado || '—')}
             ${venta.vendedor ? fila('Atendió', venta.vendedor) : ''}
-            ${fila('DNI', venta.dni_cliente || 'Sin DNI registrado')}
             ${fila('Pago', venta.metodo_pago || '—')}
             ${Number(venta.requiere_receta) === 1 ? fila('Receta', 'Requerida') : ''}
         </dl>

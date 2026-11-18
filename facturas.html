@@ -16,9 +16,9 @@
 <p id="facturas-mensaje" role="status" aria-live="polite">Verificando sesión...</p>
 <section id="pagina-facturas" hidden>
 <div class="controles-facturas"><h1>Facturas de venta</h1>
-<label for="buscar-factura">Buscar por factura o DNI</label><input id="buscar-factura" type="search">
+<label for="buscar-factura">Buscar por factura o DNI</label><input id="buscar-factura" type="search" maxlength="15" inputmode="numeric" autocomplete="off" placeholder="0000-0000-00000">
 </div>
-<div class="tabla-contenedor"><table><thead><tr><th>ID</th><th>Factura</th><th>DNI</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead><tbody id="facturas-filas"></tbody></table></div></div>
+<div class="tabla-contenedor"><table><thead><tr><th>ID</th><th>Factura</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead><tbody id="facturas-filas"></tbody></table></div></div>
 </section>
 </main>
 <dialog id="factura-detalle" aria-labelledby="factura-detalle-titulo">
