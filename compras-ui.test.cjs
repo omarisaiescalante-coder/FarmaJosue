@@ -8,7 +8,7 @@ app.whenReady().then(async () => {
     try {
         await ventana.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`<!doctype html><section id="comprasEncabezado" class="compras-encabezado"></section><form id="recordForm"></form>
             <div id="lotesAgregados"></div><section id="comprasResumen"></section><button id="saveButton"></button><button id="clearButton"></button><button id="backButton"></button>
-            <button id="logoutButton"></button><span id="sessionUser"></span><div id="message"></div>
+            <button id="logoutButton"></button><span id="sessionUser"></span><small id="sessionRole"></small><div id="message"></div>
             <div id="tableContainer"></div><div id="lotesSection"></div><div id="lotesTitle"></div><div id="lotesContainer"></div>`));
         const config = require('./compras');
         await ventana.webContents.executeJavaScript(`
@@ -19,7 +19,7 @@ app.whenReady().then(async () => {
                     { id_distribuidor: 2, nombre: 'Laboratorio actualizado', telefono: '8888-8888', correo: 'b@example.com' }
                 ],
                     medicamentos: [{ id_medicamento: 1, codigo: 'MED-1', nombre: 'Existente', stock_total: 3, forma_venta: 'Frasco', precio_venta: 10 }] } }),
-                registrarMedicamento: async datos => { window.ultimoMedicamento = datos; return { datos: { ...datos, id_medicamento: 2, codigo: 'MED-2', stock_total: 0 } }; },
+                registrarMedicamento: async datos => { window.ultimoMedicamento = datos; return { datos: { ...datos, id_medicamento: 2, codigo: datos.codigo || 'MED-2', stock_total: 0 } }; },
                 listarProveedores: async () => ({ datos: window.proveedoresPrueba || (await window.farmacia.cargarCompras()).datos.proveedores }),
                 guardarProveedor: async datos => {
                     const p = { ...datos, id_distribuidor: Number(datos.id_distribuidor) || 3 };
@@ -32,6 +32,7 @@ app.whenReady().then(async () => {
             }; void 0;`);
         await ventana.webContents.executeJavaScript(fs.readFileSync(path.join(__dirname, 'proveedores-ui.js'), 'utf8'));
         await ventana.webContents.executeJavaScript(fs.readFileSync('equivalencias-lote.js', 'utf8'));
+        await ventana.webContents.executeJavaScript(fs.readFileSync('fechas-lote.js', 'utf8'));
         await ventana.webContents.executeJavaScript(fs.readFileSync(path.join(__dirname, 'tabla.js'), 'utf8'));
         const resultado = await ventana.webContents.executeJavaScript(`(async () => {
             const assert = (valor, texto) => { if (!valor) throw new Error(texto); };
@@ -87,28 +88,32 @@ app.whenReady().then(async () => {
             cambiar('nombre_medicamento', 'Existente');
             assert(campo('id_medicamento').value === '1', 'No encuentra medicamento existente');
             assert(campo('laboratorio').value === 'Laboratorio de prueba' && campo('laboratorio').type === 'hidden', 'Laboratorio del lote incorrecto');
-            cambiar('nombre_medicamento', 'Nuevo medicamento');
+            campo('nombre_medicamento').value = 'Nuevo medicamento';
+            campo('nombre_medicamento').dispatchEvent(new Event('input'));
             const panel = lote.querySelector('fieldset');
             const modal = lote.querySelector('dialog');
             assert(!modal.open && panel.disabled, 'No muestra confirmación flotante antes del registro');
-            const aceptar = lote.querySelector('.btn-warning');
-            assert(!aceptar.hidden, 'No ofrece registrar el medicamento');
+            const aceptar = sugerencias.querySelector('.medicamento-crear');
+            assert(aceptar && sugerencias.matches(':popover-open'), 'No ofrece registrar el medicamento');
             aceptar.click();
             assert(modal.open && !panel.hidden && !panel.disabled, 'No abre ventana de registro al confirmar');
             assert(panel.querySelector('[id$="-nuevo-nombre"]').value === 'Nuevo medicamento', 'No copia el nombre');
             assert(panel.querySelector('[data-laboratorio-medicamento]').type === 'hidden', 'Laboratorio visible en medicamento');
             form.elements.id_distribuidor.value = 'Laboratorio actualizado';
             form.elements.id_distribuidor.dispatchEvent(new Event('input'));
+            panel.querySelector('[id$="-nuevo-codigo"]').value = 'FJ-0002';
             panel.querySelector('select').value = 'Sin Receta Medica';
             panel.querySelector('button').click();
             await new Promise(resolve => setTimeout(resolve, 20));
+            assert(window.ultimoMedicamento.codigo === 'FJ-0002', 'No envia el codigo del medicamento');
             assert(window.ultimoMedicamento.laboratorio === 'Laboratorio actualizado', 'No hereda laboratorio del encabezado');
             assert(panel.hidden && campo('id_medicamento').value === '2', 'No selecciona medicamento recién registrado');
             cambiar('tipo_medicamento', 'Suero'); cambiar('modalidad_venta', 'Caja y unidad');
             cambiar('numero_lote', 'LOTE-MANUAL'); cambiar('paquetes_por_caja', '10'); cambiar('cantidad', '2');
-            cambiar('precio_compra_unidad', '5'); cambiar('precio_venta_unidad', '8'); cambiar('precio_venta', '80'); cambiar('fecha_fabricacion', '2025-01-01');
+            cambiar('precio_compra_unidad', '5'); cambiar('precio_venta_unidad', '8'); cambiar('precio_venta', '80'); cambiar('fecha_fabricacion', window.limitesFechasLote().hoy);
             cambiar('fecha_vencimiento', '2099-01-01'); cambiar('precio', '50');
             const buscarProveedor = document.getElementById('buscarProveedor');
+            assert(!document.querySelector('.proveedores-flecha, .proveedores-acceso'), 'Muestra controles eliminados del proveedor');
             buscarProveedor.value = 'Farinter Premium'; buscarProveedor.dispatchEvent(new Event('input'));
             assert(buscarProveedor.value === 'Farinter Premium', 'Pierde texto al buscar proveedor');
             assert(!form.reportValidity(), 'Permite comprar con proveedor sin registrar');
@@ -124,10 +129,8 @@ app.whenReady().then(async () => {
             assert(proveedorModal.open && form.elements.id_distribuidor.value === 'Farinter Premium', 'No mantiene modal abierto y selecciona proveedor creado');
             assert(!proveedorForm.elements.nombre.value && !proveedorForm.elements.telefono.value && !proveedorForm.elements.correo.value && !proveedorForm.elements.id_distribuidor.value, 'No limpia formulario después de guardar');
             assert(!proveedorModal.querySelector('[data-nuevo]'), 'Sigue mostrando Nuevo proveedor');
-            proveedorModal.querySelector('[data-cerrar]').click();
             assert(form.elements.telefono_distribuidor.value === '7777-7777', 'No actualiza contactos del proveedor nuevo');
             assert(campo('cantidad').value === '2' && campo('precio').value === '50', 'Crear proveedor pierde datos del lote');
-            document.querySelector('.proveedores-acceso').click(); await new Promise(resolve => setTimeout(resolve, 20));
             const filaProveedor = [...proveedorModal.querySelectorAll('tbody tr')].find(f => f.firstChild.textContent === 'Farinter Premium');
             [...filaProveedor.querySelectorAll('button')].find(b => b.textContent === 'Editar').click();
             const cancelarEdicion = proveedorModal.querySelector('[data-cancelar-edicion]');
@@ -140,8 +143,6 @@ app.whenReady().then(async () => {
             proveedorForm.elements.nombre.value = 'Farinter Editado';
             proveedorForm.dispatchEvent(new Event('submit', { cancelable: true })); await new Promise(resolve => setTimeout(resolve, 20));
             assert(form.elements.id_distribuidor.value === 'Farinter Editado', 'No actualiza el proveedor editado en la compra');
-            proveedorModal.querySelector('[data-cerrar]').click();
-            document.querySelector('.proveedores-acceso').click(); await new Promise(resolve => setTimeout(resolve, 20));
             const confirmarAnterior = window.confirm; window.confirm = () => true;
             const filaEditada = [...proveedorModal.querySelectorAll('tbody tr')].find(f => f.firstChild.textContent === 'Farinter Editado');
             [...filaEditada.querySelectorAll('button')].find(b => b.textContent === 'Eliminar').click();
@@ -150,7 +151,7 @@ app.whenReady().then(async () => {
             proveedorModal.querySelector('[data-cerrar]').click();
             form.elements.id_distribuidor.value = 'Laboratorio actualizado'; form.elements.id_distribuidor.dispatchEvent(new Event('input'));
             actualizarTotales();
-            assert(lote.querySelector('[data-unidades-lote]').textContent.endsWith('20'), 'No calcula unidades de sueros');
+            assert([...lote.querySelectorAll('[data-unidades-lote] strong')].at(-1)?.textContent === '20', 'No calcula unidades de sueros');
             assert(form.reportValidity(), 'Formulario no válido con campos completos');
             lote.querySelector('[data-guardar-lote]').click();
             assert(!lote.querySelector('[data-detalle-lote]').hidden, 'Oculta el editor al guardar');
@@ -168,11 +169,12 @@ app.whenReady().then(async () => {
             assert(!segundo.querySelector('dialog').open, 'Interrumpe mientras escribe el nombre');
             nombreSegundo.dispatchEvent(new Event('change'));
             assert(!segundo.querySelector('dialog').open, 'Abre modal automaticamente');
-            segundo.querySelector('.btn-warning').click();
+            nombreSegundo.dispatchEvent(new Event('input'));
+            segundo.querySelector('.medicamento-crear').click();
             [...segundo.querySelectorAll('dialog button')].find(b => b.textContent === 'Cancelar' && !b.hidden).click();
             assert(!segundo.querySelector('dialog').open && nombreSegundo.value === 'Otro nuevo', 'Cancelar aviso pierde el nombre');
+            nombreSegundo.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
             nombreSegundo.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-            segundo.querySelector('.btn-warning').click();
             assert(segundo.querySelector('dialog').open, 'No abre registro en segundo lote');
             [...segundo.querySelectorAll('fieldset button')].find(b => b.textContent === 'Cancelar').click();
             assert(!segundo.querySelector('dialog').open, 'No cierra el registro cancelado');
@@ -216,7 +218,7 @@ app.whenReady().then(async () => {
             cambiar('nombre_medicamento', 'Existente');
             cambiar('tipo_medicamento', 'Frasco'); cambiar('modalidad_venta', 'Caja'); cambiar('paquetes_por_caja', '10'); cambiar('precio_venta', '20');
             cambiar('cantidad', '3'); cambiar('precio', '10');
-            cambiar('fecha_fabricacion', '2025-01-01'); cambiar('fecha_vencimiento', '2099-01-01');
+            cambiar('fecha_fabricacion', window.limitesFechasLote().hoy); cambiar('fecha_vencimiento', '2099-01-01');
             lote.querySelector('[data-guardar-lote]').click();
             assert(document.querySelectorAll('#lotesAgregados .compras-lote-compacto').length === 2, 'No conserva ambos lotes');
             assert(![...form.querySelectorAll('button')].some(b => /Cancelar lote|A?adir lote/.test(b.textContent)), 'Conserva botones retirados');
@@ -225,7 +227,7 @@ app.whenReady().then(async () => {
             cambiar('nombre_medicamento', 'Existente');
             cambiar('tipo_medicamento', 'Frasco'); cambiar('modalidad_venta', 'Caja'); cambiar('paquetes_por_caja', '10'); cambiar('precio_venta', '20');
             cambiar('cantidad', '3'); cambiar('precio', '10');
-            cambiar('fecha_fabricacion', '2025-01-01'); cambiar('fecha_vencimiento', '2099-01-01');
+            cambiar('fecha_fabricacion', window.limitesFechasLote().hoy); cambiar('fecha_vencimiento', '2099-01-01');
             lote.querySelector('[data-guardar-lote]').click();
             assert(form.elements.total.value === '130.00', 'No suma los lotes a?adidos');
             form.dispatchEvent(new Event('submit', { cancelable: true }));

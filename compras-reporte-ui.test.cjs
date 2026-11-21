@@ -7,6 +7,7 @@ app.whenReady().then(async () => {
     try {
         const html = fs.readFileSync('compras.html', 'utf8').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<link\b[^>]*>/g, '');
         await ventana.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+        await ventana.webContents.insertCSS(fs.readFileSync('styles.css', 'utf8'));
         await ventana.webContents.insertCSS(fs.readFileSync('compras-reporte.css', 'utf8'));
         const datos = agruparReporte([{ id_compra: 1, numero_factura: 'FAC#50', fecha_compra: '2026-11-04', proveedor: '<Proveedor>', id_lote: 1, numero_lote: 'LOT-555', medicamento: '<Medicamento>', cantidad_inicial: 10, precio_venta_unidad: 20, costo_total: '123.45', cantidad_empaques: 5, precio_empaque: '24.69' }], '2026-11-04', '2026-11-04');
         await ventana.webContents.executeJavaScript(`window.farmacia = { reporteCompras: async rango => { window.rango = rango; return { datos: ${JSON.stringify(datos)} }; } }; window.print = () => { window.impreso = true; }; void 0;`);
@@ -17,7 +18,15 @@ app.whenReady().then(async () => {
             const modal = document.querySelector('.reporte-compras-modal');
             assert(modal.open, 'Abre modal');
             const form = modal.querySelector('form');
+            await new Promise(r => setTimeout(r, 20));
+            assert(form.elements.periodo.value === 'hoy' && window.rango.desde === window.rango.hasta, 'Consulta hoy al abrir');
+            form.elements.periodo.value = 'semana';
+            form.elements.periodo.dispatchEvent(new Event('change'));
+            await new Promise(r => setTimeout(r, 20));
+            assert((Date.parse(window.rango.hasta) - Date.parse(window.rango.desde)) / 86400000 === 6, 'Consulta los ultimos siete dias');
             form.elements.desde.value = '2026-11-04'; form.elements.hasta.value = '2026-11-04';
+            form.elements.desde.dispatchEvent(new Event('input'));
+            assert(form.elements.periodo.value === 'personalizado' && modal.querySelector('footer button').disabled, 'Editar fechas invalida la exportacion anterior');
             form.dispatchEvent(new Event('submit', {cancelable: true}));
             await new Promise(r => setTimeout(r, 20));
             assert(window.rango.desde === '2026-11-04', 'Envía rango');
@@ -33,6 +42,7 @@ app.whenReady().then(async () => {
             const imprimir = [...modal.querySelectorAll('button')].find(b => b.textContent.includes('Imprimir'));
             imprimir.click(); assert(window.impreso, 'Imprime reporte');
             const guardarPDF = [...modal.querySelectorAll('button')].find(b => b.textContent === 'Guardar PDF');
+            assert(imprimir.parentElement === guardarPDF.parentElement && guardarPDF.classList.contains('btn-warning'), 'Acciones juntas con Guardar PDF amarillo');
             window.farmacia.guardarReportePDF = async datos => { window.datosPDF = datos; return {datos:{cancelado:false,archivo:'reporte.pdf'}}; };
             guardarPDF.click(); await new Promise(r => setTimeout(r,20));
             assert(window.datosPDF.tipo === 'compras' && modal.textContent.includes('PDF guardado en: reporte.pdf'), 'Guarda con boton independiente');
@@ -53,12 +63,12 @@ app.whenReady().then(async () => {
             window.farmacia.reporteCompras = async rango => ({datos: {...rango, bloques: [], totalCentavos: 0}});
             form.dispatchEvent(new Event('submit', {cancelable:true})); await new Promise(r => setTimeout(r, 20));
             assert(modal.textContent.includes('No hay compras'), 'Período vacío');
-            [...modal.querySelectorAll('button')].find(b => b.textContent === 'Cerrar').click();
+            modal.querySelector('[aria-label="Cerrar reporte"]').click();
             assert(!modal.open && document.activeElement.id === 'abrirReporteCompras', 'Cierra y devuelve foco');
-            document.getElementById('vistaInventarioLotes').hidden = false;
             window.farmacia.reporteLotes = async rango => ({datos: {...rango, lotes: [{numero_lote:'LOT-PRUEBA', numero_factura:'FAC#99', medicamento:'<Suero>', cajas: null, blisteres: null, unidades: 0, fecha_fabricacion: '2026-11-04', fecha_vencimiento: null}], medicamentos: [{puesto:1, nombre:'Suero', unidades_vendidas:20}, {puesto:null, nombre:'Sin ventas', unidades_vendidas:0}]}});
             document.getElementById('abrirReporteCompras').click();
-            assert(form.elements.tipo.value === 'lotes', 'Abre reporte de lotes desde su inventario');
+            form.elements.tipo.value = 'lotes';
+            form.elements.tipo.dispatchEvent(new Event('change'));
             form.dispatchEvent(new Event('submit', {cancelable:true})); await new Promise(r => setTimeout(r, 20));
             const documento = document.getElementById('reporteComprasDocumento');
             assert(documento.textContent.includes('Número de lote: LOT-PRUEBA') && documento.textContent.includes('Factura: FAC#99'), 'Encabezado por lote y factura');

@@ -20,7 +20,7 @@ const { textoStockEmpaque } = require('./stock-empaques');
             const datos = { tipo_medicamento: 'Pastilla', presentacion_ingreso: 'Caja', paquetes_por_caja: 5, unidades_por_blister: 10,
                 cajas_por_paquete: 2, blisteres_por_paquete: 10, unidades_por_paquete: 100, cantidad: 2, precio: 100, formas_venta: formas.map(nombre => ({ nombre, cantidad: { Caja: 2, Blister: 5, Unidad: 10 }[nombre], precio: { Caja: 200, Blister: 40, Unidad: 4 }[nombre] })) };
             await compras.guardar(proxy, usuario, { id_distribuidor: token, telefono_distribuidor: '9999-9999', correo_distribuidor: 'test@example.com', fecha_compra: hoy,
-                metodo_pago: 'Transferencia', estado: 'Cancelado', lotes: [{ ...datos, id_medicamento: med.insertId, numero_lote: token, fecha_fabricacion: '2020-01-01', fecha_vencimiento: '2099-01-01' }] });
+                metodo_pago: 'Transferencia', estado: 'Cancelado', lotes: [{ ...datos, id_medicamento: med.insertId, numero_lote: token, fecha_fabricacion: hoy, fecha_vencimiento: '2099-01-01' }] });
             let catalogo = await ventas.cargar(proxy, usuario);
             const pres = catalogo.presentaciones.filter(p => p.id_medicamento === med.insertId);
             assert.deepEqual(pres.map(p => p.nombre_presentacion).sort(), [...formas].sort());
@@ -55,6 +55,19 @@ const { textoStockEmpaque } = require('./stock-empaques');
             assert.deepEqual(catalogo.presentaciones.filter(p => p.id_medicamento === med.insertId).map(p => p.nombre_presentacion), ['Unidad']);
             const [[stock]] = await conn.execute('SELECT stock_total FROM medicamentos WHERE id_medicamento = ?', [med.insertId]);
             assert.equal(stock.stock_total, lote.cantidad_disponible);
+            if (formas.length === 3) {
+                const numero = randomUUID();
+                const entrada = { ...datos, id_medicamento: med.insertId, numero_lote: numero, cantidad: 3,
+                    fecha_fabricacion: hoy, fecha_vencimiento: '2099-01-01',
+                    formas_venta: datos.formas_venta.map((f, i) => ({ ...f, cantidad: [10, 5, 4][i] })) };
+                await compras.guardar(proxy, usuario, { id_distribuidor: token, telefono_distribuidor: '9999-9999',
+                    correo_distribuidor: 'test@example.com', fecha_compra: hoy, metodo_pago: 'Transferencia', estado: 'Cancelado', lotes: [entrada] });
+                const [[nuevoLote]] = await conn.execute('SELECT * FROM lote WHERE numero_lote = ?', [numero]);
+                assert.equal(nuevoLote.cantidad_inicial, 600);
+                assert.equal(textoStockEmpaque(nuevoLote), 'Caja = 30 · Blíster = 150 · Unidad = 600');
+                const [[acumulado]] = await conn.execute('SELECT stock_total FROM medicamentos WHERE id_medicamento = ?', [med.insertId]);
+                assert.equal(acumulado.stock_total, stock.stock_total + 600);
+            }
             await conn.rollback();
             console.log(formas.join(' + ') + ': compra, venta, edición y limpieza OK');
         }

@@ -32,17 +32,16 @@
 </head> 
 
 <body data-module="compras" class="bg-light">
-    <nav class="navbar navbar-dark bg-success px-4 py-3 shadow">
-        <a href="index.html" class="navbar-brand" aria-label="Farmacia Josué: ir al menú principal" title="Ir al menú principal"><img class="logo-marca" src="assets/logo-farmajosue.png" alt=""> Farmacia Josué</a>
-        <span id="sessionUser" class="text-white"></span>
-        <button
-            id="logoutButton"
-            class="btn btn-outline-light"
-            type="button"
-        >
-            Cerrar sesión
-        </button>
-    </nav>
+    <header class="cabecera">
+        <a href="index.html" class="nombre" aria-label="Ir al menú principal" title="Ir al menú principal"><img class="logo-marca" src="assets/logo-farmajosue.png" alt=""> Farmacia Josué</a>
+        <div class="sesion">
+            <span>
+                <span id="sessionUser"></span>
+                <small id="sessionRole"></small>
+            </span>
+            <button id="logoutButton" type="button">Cerrar sesión</button>
+        </div>
+    </header>
 
     <main class="container-fluid p-4">
         <div class="d-flex flex-wrap gap-2 mb-3">
@@ -53,12 +52,13 @@
         <div class="compras-barra-superior">
             <h1 id="pageTitle">Compras</h1>
             <button id="abrirReporteCompras" type="button" class="btn btn-success">Reportes</button>
-            <nav class="compras-accesos" aria-label="Inventarios de compras">
+            <nav class="compras-accesos" aria-label="Vistas de compras">
+                <button id="volverRegistroCompras" type="button" class="btn btn-outline-success" aria-label="Volver a Compras" title="Volver a Compras" aria-controls="vistaRegistroCompras" hidden>&larr;</button>
                 <button id="irInventarioCompras" type="button" class="btn btn-outline-success" disabled>Inventario de Compras</button>
                 <button id="verLotesRegistrados" type="button" class="btn btn-success" disabled>Inventario de Lotes</button>
             </nav>
         </div>
-        <p id="pageDescription" class="text-secondary">Registro de compras de medicamentos a laboratorios.</p>
+        <p id="pageDescription" class="text-secondary" hidden></p>
         <div id="message" class="alert d-none" role="alert"></div>
 
         <div id="vistaRegistroCompras">
@@ -113,6 +113,7 @@
     <script src="./inventario-lotes.js"></script>
     <script src="./inventario-compras.js"></script>
     <script src="./equivalencias-lote.js"></script>
+    <script src="./fechas-lote.js"></script>
     <script src="./tabla.js"></script>
     <script src="./compras-reporte-ui.js"></script>
 </body>

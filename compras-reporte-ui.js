@@ -9,49 +9,107 @@
     };
     const modal = crear('dialog', undefined, 'reporte-compras-modal');
     modal.setAttribute('aria-labelledby', 'reporteComprasTitulo');
-    const cabecera = crear('header', undefined, 'reporte-compras-controles reporte-compras-cabecera');
+    const cabecera = crear('header', undefined, 'reporte-compras-controles reporte-ventas-cabecera');
+    const encabezado = crear('div');
     const titulo = crear('h2', 'Reporte de Compras'); titulo.id = 'reporteComprasTitulo';
-    const cerrar = crear('button', 'Cerrar', 'btn btn-outline-secondary'); cerrar.type = 'button';
-    cerrar.onclick = () => { modal.close(); acceso.focus(); }; cabecera.append(titulo, cerrar);
-    const filtros = crear('form', undefined, 'reporte-compras-controles reporte-compras-filtros');
-    const etiquetaTipo = crear('label', 'Tipo de reporte:');
-    const tipo = crear('select', undefined, 'form-select'); tipo.name = 'tipo';
+    encabezado.append(crear('p', 'FARMACIA JOSUÉ', 'reporte-ventas-etiqueta'), titulo,
+        crear('p', 'Consultá y exportá el reporte del período que necesités.'));
+    const cerrar = crear('button', '×', 'reporte-ventas-cerrar'); cerrar.type = 'button';
+    cerrar.setAttribute('aria-label', 'Cerrar reporte');
+    cerrar.onclick = () => { modal.close(); acceso.focus(); };
+    cabecera.append(encabezado, cerrar);
+
+    const cuerpo = crear('div', undefined, 'reporte-ventas-cuerpo');
+    const filtros = crear('form', undefined, 'reporte-compras-controles reporte-ventas-filtros reporte-compras-filtros');
+    const agregarFiltro = (nombre, etiqueta, control) => {
+        const grupo = crear('div');
+        const label = crear('label', etiqueta, 'form-label');
+        control.id = 'reporte-compras-' + nombre; control.name = nombre; label.htmlFor = control.id;
+        grupo.append(label, control); filtros.append(grupo);
+    };
+    const tipo = crear('select', undefined, 'form-select');
     tipo.add(new Option('Compras', 'compras')); tipo.add(new Option('Lotes', 'lotes'));
-    etiquetaTipo.append(tipo); filtros.append(etiquetaTipo);
-    const campos = {};
-    const hoy = new Date();
-    const fechaLocal = dia => `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}`;
-    for (const [nombre, etiqueta, valor] of [['desde', 'Desde:', fechaLocal(new Date(hoy.getFullYear(), hoy.getMonth(), 1))], ['hasta', 'Hasta:', fechaLocal(hoy)]]) {
-        const label = crear('label', etiqueta);
-        const input = crear('input', undefined, 'form-control'); input.type = 'date'; input.required = true; input.name = nombre; input.value = valor;
-        campos[nombre] = input; label.append(input); filtros.append(label);
+    agregarFiltro('tipo', 'Tipo de reporte', tipo);
+    const periodo = crear('select', undefined, 'form-select');
+    for (const [valor, etiqueta] of [['hoy', 'Hoy'], ['semana', 'Últimos 7 días'], ['mes', 'Este mes'], ['personalizado', 'Rango de fechas']]) {
+        periodo.add(new Option(etiqueta, valor));
     }
-    const generar = crear('button', 'Generar Reporte', 'btn btn-success'); generar.type = 'submit';
-    const imprimir = crear('button', 'Imprimir', 'btn btn-outline-success'); imprimir.type = 'button'; imprimir.disabled = true;
-    const guardarPDF = crear('button', 'Guardar PDF', 'btn btn-success'); guardarPDF.type = 'button'; guardarPDF.disabled = true;
-    filtros.append(generar, imprimir, guardarPDF);
-    const estado = crear('p', '', 'reporte-compras-controles'); estado.setAttribute('role', 'status');
+    agregarFiltro('periodo', 'Período', periodo);
+    const campos = {};
+    for (const [nombre, etiqueta] of [['desde', 'Desde'], ['hasta', 'Hasta']]) {
+        const input = crear('input', undefined, 'form-control'); input.type = 'date'; input.required = true;
+        campos[nombre] = input; agregarFiltro(nombre, etiqueta, input);
+    }
+    const generar = crear('button', 'Consultar', 'btn btn-outline-primary'); generar.type = 'submit';
+    filtros.append(generar);
+    const estado = crear('p', '', 'reporte-compras-controles reporte-ventas-estado'); estado.setAttribute('role', 'status');
     const resultado = crear('section'); resultado.id = 'reporteComprasDocumento'; resultado.setAttribute('aria-label', 'Reporte de compras generado');
-    modal.append(cabecera, filtros, estado, resultado); document.body.append(modal);
+    cuerpo.append(filtros, estado, resultado);
+    const pie = crear('footer', undefined, 'reporte-compras-controles reporte-ventas-pie');
+    const imprimir = crear('button', 'Imprimir', 'btn btn-outline-primary'); imprimir.type = 'button'; imprimir.disabled = true;
+    const guardarPDF = crear('button', 'Guardar PDF', 'btn btn-warning'); guardarPDF.type = 'button'; guardarPDF.disabled = true;
+    pie.append(imprimir, guardarPDF);
+    modal.append(cabecera, cuerpo, pie); document.body.append(modal);
+
     let version = 0;
     let reporteGenerado = null;
     let exportando = false;
     modal.addEventListener('cancel', evento => { if (exportando) evento.preventDefault(); });
-    const actualizarTipo = () => {
-        version++; generar.disabled = false; imprimir.disabled = guardarPDF.disabled = true; reporteGenerado = null;
+    const prepararReporte = mensaje => {
+        version++;
+        generar.disabled = false; imprimir.disabled = guardarPDF.disabled = true; reporteGenerado = null;
         resultado.replaceChildren(); resultado.removeAttribute('aria-busy');
-        titulo.textContent = tipo.value === 'lotes' ? 'Reporte de Lotes' : 'Reporte de Compras';
-        estado.textContent = '';
-        resultado.setAttribute('aria-label', tipo.value === 'lotes' ? 'Reporte de lotes generado' : 'Reporte de compras generado');
+        campos.hasta.setCustomValidity('');
+        estado.textContent = mensaje;
     };
-    tipo.onchange = actualizarTipo;
+    const actualizarTipo = () => {
+        const esLotes = tipo.value === 'lotes';
+        titulo.textContent = esLotes ? 'Reporte de Lotes' : 'Reporte de Compras';
+        resultado.setAttribute('aria-label', esLotes ? 'Reporte de lotes generado' : 'Reporte de compras generado');
+    };
+    const fechaLocal = dia => `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}`;
+    const aplicarPeriodo = () => {
+        const hoy = new Date();
+        const inicio = new Date(hoy);
+        if (periodo.value === 'semana') inicio.setDate(hoy.getDate() - 6);
+        if (periodo.value === 'mes') inicio.setDate(1);
+        campos.desde.value = fechaLocal(inicio);
+        campos.hasta.value = fechaLocal(hoy);
+    };
+    const consultar = () => {
+        prepararReporte('');
+        filtros.requestSubmit();
+    };
+    tipo.onchange = () => { actualizarTipo(); consultar(); };
+    periodo.onchange = () => {
+        if (periodo.value === 'personalizado') {
+            prepararReporte('Elegí las fechas y pulsá Consultar.');
+            campos.desde.focus();
+        } else {
+            aplicarPeriodo();
+            consultar();
+        }
+    };
+    for (const campo of Object.values(campos)) {
+        campo.oninput = () => {
+            periodo.value = 'personalizado';
+            prepararReporte('Pulsá Consultar para actualizar el reporte.');
+        };
+    }
     acceso.onclick = () => {
-        const vista = document.getElementById('vistaInventarioLotes');
-        const nuevoTipo = vista && !vista.hidden ? 'lotes' : 'compras';
-        if (tipo.value !== nuevoTipo) { tipo.value = nuevoTipo; actualizarTipo(); }
-        if (!modal.open) modal.showModal(); campos.desde.focus();
+        if (modal.open) return;
+        if (acceso.hidden) return;
+        tipo.value = 'compras';
+        actualizarTipo();
+        periodo.value = 'hoy';
+        aplicarPeriodo();
+        modal.showModal();
+        periodo.focus();
+        consultar();
     };
-    modal.addEventListener('close', () => { version++; generar.disabled = false; resultado.removeAttribute('aria-busy'); acceso.focus(); });
+    modal.addEventListener('close', () => {
+        if (!modal.open) { prepararReporte(''); acceso.focus(); }
+    });
     const fecha = valor => valor ? valor.split('-').reverse().join('/') : '—';
     const dinero = centavos => 'L. ' + (centavos / 100).toLocaleString('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     function pintar(datos) {
@@ -141,11 +199,10 @@
             if (actual === version) { generar.disabled = false; resultado.removeAttribute('aria-busy'); }
         }
     };
-    filtros.oninput = () => { campos.hasta.setCustomValidity(''); };
     imprimir.onclick = () => window.print();
     guardarPDF.onclick = async () => {
         if (!reporteGenerado || exportando) return;
-        const controles = [...filtros.elements, cerrar].map(input => [input, input.disabled]);
+        const controles = [...filtros.elements, cerrar, imprimir, guardarPDF].map(input => [input, input.disabled]);
         controles.forEach(([input]) => { input.disabled = true; }); exportando = true;
         estado.textContent = 'Guardando PDF…';
         try {

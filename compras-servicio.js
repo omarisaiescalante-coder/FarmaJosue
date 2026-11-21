@@ -2,6 +2,7 @@
 const config = require('./compras');
 const { randomUUID } = require('node:crypto');
 const { validarEmpaque } = require('./empaques');
+const { limitesFechasLote } = require('./fechas-lote');
 
 async function autorizar(db, sesion) {
     if (!sesion) throw new Error('Iniciá sesión para continuar.');
@@ -65,8 +66,7 @@ async function guardar(db, sesion, datos) {
     if (!/^\d{4}-\d{4}$/.test(telefono)) throw new Error('Usá el formato de teléfono 9999-9999.');
     if (correo.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) throw new Error('Correo inválido.');
     const fecha = String(datos.fecha_compra || '');
-    const hoy = new Date();
-    const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    const { hoy: fechaHoy, fabricacionMin, vencimientoMin } = limitesFechasLote();
     const fechaParseada = new Date(`${fecha}T12:00:00Z`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || !Number.isFinite(fechaParseada.getTime()) ||
         fechaParseada.toISOString().slice(0, 10) !== fecha || fecha > fechaHoy)
@@ -89,6 +89,8 @@ async function guardar(db, sesion, datos) {
             (!/^\d{4}-\d{2}-\d{2}$/.test(fabricacion) || !Number.isFinite(fechaFabricacion.getTime()) ||
              fechaFabricacion.toISOString().slice(0, 10) !== fabricacion || fabricacion > fecha || fabricacion >= String(lote.fecha_vencimiento)))
             throw new Error('Revisá la fecha de fabricación: debe ser anterior al vencimiento y no posterior a la compra.');
+        if (fabricacion && fabricacion < fabricacionMin)
+            throw new Error('La fecha de fabricación debe estar dentro de los últimos dos meses.');
         const vencimiento = String(lote.fecha_vencimiento || '');
         const fechaVencimiento = new Date(`${vencimiento}T12:00:00Z`);
         if (!Number.isSafeInteger(medicamento) || medicamento < 1) throw new Error('Seleccioná el medicamento de cada lote.');
@@ -96,8 +98,8 @@ async function guardar(db, sesion, datos) {
         if (!numero || numero.length > 50 || numeros.has(numero.toLowerCase())) throw new Error('Revisá los números de lote: no pueden estar vacíos ni repetidos.');
         numeros.add(numero.toLowerCase());
         if (!/^\d{4}-\d{2}-\d{2}$/.test(vencimiento) || !Number.isFinite(fechaVencimiento.getTime()) ||
-            fechaVencimiento.toISOString().slice(0, 10) !== vencimiento || vencimiento <= fechaHoy)
-            throw new Error('El vencimiento de cada lote debe ser posterior a hoy.');
+            fechaVencimiento.toISOString().slice(0, 10) !== vencimiento || vencimiento < vencimientoMin)
+            throw new Error('El vencimiento de cada lote debe ser al menos un año a partir de hoy.');
         if (!/^\d+(\.\d{1,2})?$/.test(String(lote.precio)) || Number(lote.precio) > 99999999.99)
             throw new Error('Revisá el precio unitario de cada lote.');
         const precioCentavos = Math.round(Number(lote.precio) * 100);
@@ -198,6 +200,8 @@ async function guardar(db, sesion, datos) {
 async function registrarMedicamento(db, sesion, datos) {
     await autorizar(db, sesion);
     const nombre = String(datos?.nombre || '').trim();
+    let codigo = String(datos?.codigo ?? '').trim();
+    if (codigo.length > 20) throw new Error('El código admite hasta 20 caracteres.');
     const laboratorio = String(datos?.laboratorio || '').trim();
     const categoria = String(datos?.categoria || '').trim();
     const restriccion = datos?.restriccion;
@@ -210,9 +214,11 @@ async function registrarMedicamento(db, sesion, datos) {
         const [alta] = await conexion.execute(`INSERT INTO medicamentos
             (codigo, nombre, laboratorio, categoria, restriccion, estado)
             VALUES (?, ?, ?, ?, ?, 'Agotado')`,
-        [randomUUID().replace(/-/g, '').slice(0, 20), nombre, laboratorio, categoria, restriccion]);
-        const codigo = `MED-${String(alta.insertId).padStart(6, '0')}`;
-        await conexion.execute('UPDATE medicamentos SET codigo = ? WHERE id_medicamento = ?', [codigo, alta.insertId]);
+        [codigo || randomUUID().replace(/-/g, '').slice(0, 20), nombre, laboratorio, categoria, restriccion]);
+        if (!codigo) {
+            codigo = `MED-${String(alta.insertId).padStart(6, '0')}`;
+            await conexion.execute('UPDATE medicamentos SET codigo = ? WHERE id_medicamento = ?', [codigo, alta.insertId]);
+        }
         await conexion.commit();
         return { id_medicamento: alta.insertId, codigo, nombre, laboratorio, categoria, restriccion, stock_total: 0 };
     } catch (error) {
