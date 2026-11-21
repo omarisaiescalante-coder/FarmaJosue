@@ -5,10 +5,11 @@ const mysql = require('mysql2/promise');
 
 module.exports = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT || 3306),
+    port: Number(process.env.DB_PORT || 3306), // Cambios de puerto
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD ?? '1234',
+    password: process.env.DB_PASSWORD ?? '1234', //Cambios de contraseña
     database: process.env.DB_NAME || 'JosueFarma',
     connectionLimit: 5,
     connectTimeout: 5000,
 });
+
