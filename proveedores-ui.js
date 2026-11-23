@@ -13,12 +13,8 @@ function configurarProveedores(proveedores) {
     opciones.className = 'proveedores-opciones'; opciones.hidden = true; opciones.setAttribute('role', 'listbox');
     opciones.setAttribute('popover', 'manual');
     const combobox = document.createElement('div'); combobox.className = 'proveedores-combobox';
-    const flecha = document.createElement('button'); flecha.type = 'button'; flecha.className = 'proveedores-flecha';
-    flecha.textContent = '⌄'; flecha.setAttribute('aria-label', 'Desplegar proveedores'); flecha.setAttribute('aria-controls', opciones.id);
-    combobox.append(buscar, flecha, opciones);
-    const acceso = document.createElement('button'); acceso.type = 'button';
-    acceso.className = 'btn btn-outline-light proveedores-acceso'; acceso.textContent = 'Registrar Lab/Prov';
-    grupo.append(combobox, acceso);
+    combobox.append(buscar, opciones);
+    grupo.append(combobox);
     document.getElementById('proveedoresModal')?.remove();
     const modal = document.createElement('dialog'); modal.id = 'proveedoresModal'; modal.className = 'proveedores-modal';
     modal.innerHTML = `<div class="proveedores-modal-cabecera"><h2>Laboratorios y proveedores</h2><button type="button" data-cerrar aria-label="Cerrar">Cerrar</button></div>
@@ -106,7 +102,6 @@ function configurarProveedores(proveedores) {
         try { await refrescar(); } catch (error) { aviso.textContent = error.message; }
         formulario.elements.nombre.focus();
     }
-    acceso.addEventListener('click', () => abrir());
     modal.querySelector('[data-cerrar]').addEventListener('click', () => modal.close());
     modal.addEventListener('cancel', e => { if (ocupado) e.preventDefault(); });
     formulario.elements.telefono.addEventListener('input', e => { const n = e.target.value.replace(/\D/g, '').slice(0, 8); e.target.value = n.length > 4 ? `${n.slice(0, 4)}-${n.slice(4)}` : n; });
@@ -131,7 +126,6 @@ function configurarProveedores(proveedores) {
         selector.dispatchEvent(new Event('input')); buscar.value = escrito; filtrar();
     });
     buscar.addEventListener('focus', filtrar);
-    flecha.addEventListener('click', () => { if (opciones.hidden) { buscar.focus(); filtrar(); } else cerrarLista(); });
     window.addEventListener('resize', cerrarLista);
     window.addEventListener('scroll', e => { if (!opciones.contains(e.target)) cerrarLista(); }, true);
     grupo.addEventListener('focusout', e => {

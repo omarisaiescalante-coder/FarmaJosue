@@ -5,6 +5,8 @@
     const paginaLotes = document.getElementById('vistaInventarioLotes');
     const acceso = document.getElementById('irInventarioCompras');
     const accesoLotes = document.getElementById('verLotesRegistrados');
+    const volver = document.getElementById('volverRegistroCompras');
+    const reportes = document.getElementById('abrirReporteCompras');
     if (!registro || !historial || !acceso || !accesoLotes) return;
     const titulo = document.getElementById('pageTitle');
     const descripcion = document.getElementById('pageDescription');
@@ -14,10 +16,10 @@
     function actualizarAccesos() {
         const enCompras = !historial.hidden;
         const enLotes = paginaLotes && !paginaLotes.hidden;
-        acceso.textContent = enCompras ? 'Inicio de compras' : 'Inventario de Compras';
-        accesoLotes.textContent = enLotes ? 'Inicio de compras' : 'Inventario de Lotes';
-        acceso.setAttribute('aria-controls', enCompras ? registro.id : historial.id);
-        accesoLotes.setAttribute('aria-controls', enLotes ? registro.id : paginaLotes?.id || 'vistaInventarioLotes');
+        if (volver) volver.hidden = !registro.hidden;
+        if (reportes) reportes.hidden = registro.hidden;
+        acceso.setAttribute('aria-controls', historial.id);
+        accesoLotes.setAttribute('aria-controls', 'vistaInventarioLotes');
         acceso.setAttribute('aria-expanded', String(enCompras));
         accesoLotes.setAttribute('aria-expanded', String(!!enLotes));
     }
@@ -27,9 +29,8 @@
         registro.hidden = mostrarHistorial;
         historial.hidden = !mostrarHistorial;
         titulo.textContent = mostrarHistorial ? 'Inventario de Compras' : 'Compras';
-        descripcion.textContent = mostrarHistorial
-            ? 'Consulta las compras registradas y los lotes asociados.'
-            : 'Registro de compras de medicamentos a laboratorios.';
+        descripcion.hidden = !mostrarHistorial;
+        descripcion.textContent = mostrarHistorial ? 'Consulta las compras registradas y los lotes asociados.' : '';
         actualizarAccesos();
         if (mostrarHistorial) {
             document.getElementById('historialComprasTitulo').focus();
@@ -39,8 +40,9 @@
         }
     }
     actualizarAccesos();
+    if (volver) volver.onclick = () => cambiarVista(false);
     acceso.onclick = () => {
-        if (!historial.hidden) { cambiarVista(false); return; }
+        if (!historial.hidden) return;
         if (!registro.hidden) posicion = window.scrollY;
         cambiarVista(true);
     };
@@ -55,6 +57,7 @@
             historial.hidden = true;
             paginaLotes.hidden = false;
             titulo.textContent = 'Inventario de Lotes';
+            descripcion.hidden = false;
             descripcion.textContent = 'Inventario general de lotes y sus medicamentos.';
             actualizarAccesos();
         },

@@ -5,6 +5,7 @@ const path = require('node:path');
 const mysql = require('mysql2/promise');
 const configurada = require('./database');
 const servicio = require('./compras-servicio');
+const { hoy } = require('./fechas-lote').limitesFechasLote();
 async function probar() {
     const origen = configurada.pool.config.connectionConfig;
     const opciones = { host: origen.host, port: origen.port, user: origen.user, password: origen.password };
@@ -26,11 +27,11 @@ async function probar() {
         });
         await servicio.guardar(temporal, sesion, {
             id_distribuidor: 'Laboratorio prueba', telefono_distribuidor: '9999-9999', correo_distribuidor: 'prueba@example.com',
-            fecha_compra: '2026-01-01', metodo_pago: 'Efectivo', estado: 'Cancelado',
+            fecha_compra: hoy, metodo_pago: 'Efectivo', estado: 'Cancelado',
             lotes: [{ id_medicamento: nuevo.id_medicamento, numero_lote: 'PRUEBA-CAJA', cantidad: 2,
                 presentacion_ingreso: 'Caja', contenido_caja: 'Blister', paquetes_por_caja: 3, unidades_por_blister: 10,
                 precio: 60, precio_venta: 90, precio_venta_contenido: 35, precio_venta_unidad: 4,
-                fecha_fabricacion: '2025-01-01', fecha_vencimiento: '2099-01-01' }],
+                fecha_fabricacion: hoy, fecha_vencimiento: '2099-01-01' }],
         });
         const datos = await servicio.cargar(temporal, sesion);
         const medicamento = datos.medicamentos.find(m => m.id_medicamento === nuevo.id_medicamento);

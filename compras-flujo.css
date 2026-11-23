@@ -13,8 +13,6 @@ body[data-module="compras"] main.container-fluid { max-width: 1180px; margin-inl
 .compras-encabezado .form-control, .compras-encabezado .form-select { color: #243c50; color-scheme: light; background-color: #f8faf9; border: 1px solid #dce5e1; border-radius: 8px; min-height: 42px; }
 .compras-encabezado option { color: #243c50; background: white; }
 .compras-encabezado :focus-visible { outline-color: #198754; }
-.compras-encabezado .proveedores-acceso { color: #16734e; background: #f0f8f4; border-color: #d6e9de; }
-.compras-encabezado .proveedores-acceso:hover { background: #e2f2e9; }
 body[data-module="compras"] .compras-formulario { height: auto; padding: 0 !important; background: transparent; box-shadow: none !important; }
 .compras-formulario #recordForm { overflow: visible; padding: 0; scrollbar-gutter: auto; }
 .compras-formulario #recordForm > .col-12 { padding: 0; }
@@ -37,10 +35,10 @@ body[data-module="compras"] [data-lote] .form-control:focus,
 body[data-module="compras"] [data-lote] .form-select:focus { border-color: #379c71; box-shadow: 0 0 0 3px #19875416; }
 body[data-module="compras"] .lote-separador-venta { background: transparent; border: 0; border-bottom: 1px solid #dce5e1; border-radius: 0; color: #61736e; padding: 16px 8px 12px; margin-bottom: 20px; letter-spacing: .4px; }
 body[data-module="compras"] .lote-total-compra { border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #246749; font-size: 16px; padding: 8px; }
-.compras-pagos { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.compras-pagos { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; }
 .compras-pagos > h2 { grid-column: 1 / -1; color: #435b50; font-size: 13px; font-weight: 650; letter-spacing: .8px; text-transform: uppercase; padding-bottom: 14px; border-bottom: 1px solid #dce5e1; }
 .compras-pagos { padding: 0 0 12px; }
-.compras-resumen { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.compras-pagos .compras-resumen { grid-column: span 3; grid-template-columns: subgrid; align-items: end; }
 .compras-pagos .compras-resumen-tarjeta .form-control { max-width: 100%; }
 .compras-pagos .form-select { --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2361736e' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); }
 .compras-resumen-tarjeta [name="total"] { color: #16734e; font-size: 26px; max-width: 100%; }
@@ -49,9 +47,10 @@ body[data-module="compras"] .lote-total-compra { border: 0; border-radius: 0; ba
 @media (max-width: 850px) {
     #comprasEncabezado { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .compras-pagos { grid-template-columns: minmax(0, 1fr); }
+    .compras-pagos .compras-resumen { grid-column: 1; }
 }
 @media (max-width: 560px) {
-    #comprasEncabezado, .compras-resumen { grid-template-columns: minmax(0, 1fr); }
+    #comprasEncabezado { grid-template-columns: minmax(0, 1fr); }
     .compra-lote { padding: 0 0 20px; }
     .lote-resumen { flex-direction: column; }
 }
@@ -130,9 +129,8 @@ body[data-module="compras"] .compras-layout .form-select {
     background-size: 16px 12px, 100% 14px;
     background-repeat: no-repeat;
 }
-body[data-module="compras"] .proveedores-flecha { color: var(--azul); }
 body[data-module="compras"] .proveedores-opciones button:hover,
-body[data-module="compras"] .proveedores-opciones button:focus { color: var(--azul); background: #143d660c; }
+body[data-module="compras"] .proveedores-opciones button:focus { color: var(--azul); background: #dce1e7; }
 body[data-module="compras"] #comprasEncabezado::before,
 body[data-module="compras"] .compras-seccion-titulo,
 body[data-module="compras"] .compra-lote,
@@ -246,6 +244,9 @@ body[data-module="compras"] .medicamentos-sugerencias button span { overflow-wra
 body[data-module="compras"] .medicamentos-sugerencias small { color: #78879b; flex-shrink: 0; }
 body[data-module="compras"] .medicamentos-sugerencias button:hover,
 body[data-module="compras"] .medicamentos-sugerencias button[aria-selected="true"] { background: #edf2f7; }
+body[data-module="compras"] .medicamentos-sugerencias .medicamento-crear { background: #ffc107; color: #342900; }
+body[data-module="compras"] .medicamentos-sugerencias .medicamento-crear:hover,
+body[data-module="compras"] .medicamentos-sugerencias .medicamento-crear[aria-selected="true"] { background: #eab000; }
 body[data-module="compras"] .compras-layout .form-control,
 body[data-module="compras"] .compras-layout .form-select,
 body[data-module="compras"] .compras-layout #buscarProveedor {
@@ -271,6 +272,26 @@ body[data-module="compras"] .compras-layout #buscarProveedor:focus {
     border-bottom-color: #143d66;
     box-shadow: none;
 }
+body[data-module="compras"] .compras-layout .compras-pagos .form-select,
+body[data-module="compras"] .compras-layout .compras-pagos .form-control,
+body[data-module="compras"] .compras-layout .compras-pagos .compras-guardar {
+    box-sizing: border-box;
+    width: 100%;
+    height: 48px;
+    padding-block: 0;
+}
+body[data-module="compras"] .compras-layout .compras-pagos .form-select {
+    padding-inline: 32px;
+    text-align-last: center;
+    color: #143d66;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+body[data-module="compras"] .compras-layout .compras-pagos select[name="estado"] {
+    background-color: #f1f6fd;
+}
+body[data-module="compras"] .compras-pagos .form-select option { text-align-last: start; }
 body[data-module="compras"] .compras-layout .form-label { display: block; margin-bottom: 14px; line-height: 1.5; }
 body[data-module="compras"] .compras-layout .form-select,
 body[data-module="compras"] .compras-layout #buscarProveedor { border-radius: 10px; padding-left: 12px; }
@@ -282,12 +303,16 @@ body[data-module="compras"] .compras-accesos .btn {
     line-height: 1.4;
     border-radius: 8px;
 }
-body[data-module="compras"] .compras-encabezado .proveedores-acceso { margin-top: 16px; }
 body[data-module="compras"] #lotesNuevos + .btn { margin-top: 16px; }
-body[data-module="compras"] .proveedores-opciones { padding: 6px; border-radius: 12px; border-color: #e0e6ed; box-shadow: 0 4px 14px #143d6610; }
-body[data-module="compras"] .proveedores-opciones button { border-radius: 8px; padding: 10px 12px; }
-body[data-module="compras"] .proveedores-opciones button + button { margin-top: 4px; }
+body[data-module="compras"] .proveedores-opciones { padding: 4px; border-radius: 10px; border-color: #d5dae0; background: #eef0f2; box-shadow: 0 4px 14px #143d6610; }
+body[data-module="compras"] .proveedores-opciones button { border-radius: 6px; padding: 6px 9px; font-size: 12px; line-height: 1.4; }
+body[data-module="compras"] .proveedores-opciones button + button { margin-top: 2px; }
 @supports (appearance: base-select) {
+    body[data-module="compras"] .compras-layout .compras-pagos select.form-select {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
     body[data-module="compras"] .compras-layout select.form-select,
     body[data-module="compras"] .compras-layout select.form-select::picker(select) { appearance: base-select; }
     body[data-module="compras"] .compras-layout select.form-select::picker-icon { display: none; }
@@ -326,7 +351,7 @@ body[data-module="compras"] .lote-distribucion-cuaderno .form-select { display: 
 .lote-cantidad-cuaderno { grid-column: 1; grid-row: 2; }
 .lote-precio-cuaderno { grid-column: 2; grid-row: 2; }
 .lote-entrada-cuaderno { grid-column: 3; grid-row: 2; }
-.lote-ventas-cuaderno { grid-column: 1 / -1; grid-row: 3; }
+.lote-distribucion-cuaderno > .lote-ventas-cuaderno { grid-column: 1 / -1; grid-row: 3; border-top: 1px solid #c8d0da; padding-top: 14px; }
 .lote-forma-venta {
     display: grid;
     grid-template-columns: var(--columnas-lote);
@@ -338,25 +363,38 @@ body[data-module="compras"] .lote-distribucion-cuaderno .form-select { display: 
 body[data-module="compras"] .lote-distribucion-cuaderno .lote-forma-venta label > .form-select,
 body[data-module="compras"] .lote-distribucion-cuaderno .lote-forma-venta label > .form-control { margin-top: 14px; }
 body[data-module="compras"] #vistaRegistroCompras .lote-forma-venta > button { padding: 0; min-height: 32px; margin-bottom: 7px; font-size: 22px; }
-.lote-buscador { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: end; }
-.lote-buscador > .form-label { grid-column: 1; grid-row: 1; }
-.lote-buscador > input { grid-column: 1; grid-row: 2; }
-body[data-module="compras"] #vistaRegistroCompras .lote-buscador > .btn-warning {
-    grid-column: 2; grid-row: 2; justify-self: start; align-self: stretch;
-    margin: 0; min-height: 42px; background: #ffc107; color: #342900; border-color: #ffc107;
-}
-body[data-module="compras"] #vistaRegistroCompras .lote-buscador > .btn-warning:hover { background: #eab000; border-color: #eab000; color: #342900; }
-.lote-buscador > p { grid-column: 1 / -1; grid-row: 3; color: #725500; margin: 8px 0 0; font-size: 13px; }
-.lote-buscador > [hidden] { display: none; }
 .lote-fechas-cuaderno { grid-column: 1 / -1; grid-row: 4; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .lote-fechas-cuaderno > * { min-width: 0; width: auto; padding: 0; }
 body[data-module="compras"] .lote-distribucion-cuaderno > [data-total-lote] { grid-column: 1 / -1; grid-row: 5; padding: 0; font-size: 18px; }
-.lote-distribucion-cuaderno > [data-unidades-lote] { grid-column: 1 / -1; grid-row: 6; font-size: 16px; }
+.lote-distribucion-cuaderno > [data-unidades-lote] {
+    grid-column: 1 / -1;
+    grid-row: 6;
+    padding: 14px 16px;
+    border: 1px solid #dce4ed;
+    border-radius: 12px;
+    background: #f4f7fa;
+    color: #203b56;
+}
+[data-unidades-lote] h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+[data-unidades-lote] ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+[data-unidades-lote] ul[hidden] { display: none; }
+[data-unidades-lote] li {
+    display: grid;
+    gap: 2px;
+    min-width: 82px;
+    padding: 7px 12px;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    background: #fff;
+}
+[data-unidades-lote] strong { font-size: 20px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+[data-unidades-lote] span,
+[data-unidades-lote] p { color: #4e6073; font-size: 13px; }
+[data-unidades-lote] p { margin: 0; }
 .lote-acciones-cuaderno { grid-column: 1 / -1; grid-row: 7; display: flex; flex-wrap: wrap; gap: 12px; }
 @media (max-width: 560px) {
     body[data-module="compras"] .lote-distribucion-cuaderno { grid-template-columns: minmax(0, 1fr); gap: 20px; }
     .lote-distribucion-cuaderno > * { grid-column: 1 !important; grid-row: auto !important; }
-    .lote-buscador { column-gap: 12px; grid-template-columns: minmax(0, 1fr) auto; }
     .lote-forma-venta { gap: 8px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 28px; }
     .lote-fechas-cuaderno { gap: 12px; }
 }

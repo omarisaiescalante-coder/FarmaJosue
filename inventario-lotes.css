@@ -63,7 +63,12 @@ body[data-module="compras"] .inventario-editor select[name="fecha_edicion"] { pa
 .inventario-tabla .inventario-lote-destacado > td { background: #e6efff; border-bottom-color: #a7bfe5; }
 .inventario-tabla .inventario-lote-destacado > td:first-child { box-shadow: inset 4px 0 #2459a6; font-weight: 700; }
 #vistaInventarioCompras[hidden], #vistaRegistroCompras[hidden] { display: none !important; }
-@media (max-width: 600px) { .compras-accesos { width: 100%; } .compras-accesos button { flex: 1 1 100%; } }
+.compras-barra-superior button[hidden] { display: none; }
+.compras-accesos #volverRegistroCompras { flex: 0 0 auto; min-width: 36px; padding: 4px 9px; font-size: 19px; }
+@media (max-width: 600px) {
+    .compras-accesos { width: 100%; justify-content: flex-start; gap: .4rem; }
+    .compras-accesos button { flex: 1 1 auto; }
+}
 
 /* En modo página el componente ocupa el área principal, sin backdrop ni altura limitada. */
 .inventario-lotes-pagina { width: 100%; background: #fff; border-radius: 20px; box-shadow: 0 8px 28px #102e3512; }

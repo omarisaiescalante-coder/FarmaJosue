@@ -36,7 +36,7 @@ const ventas = require('./ventas-servicios');
                         unidades_por_blister: tipo === 'Pastilla' && modalidad === 'Caja y unidad' ? 10 : undefined, precio: 100,
                         precio_compra_contenido: 10, precio_compra_unidad: 1,
                         precio_venta: 200, precio_venta_contenido: 20, precio_venta_unidad: 2,
-                        fecha_fabricacion: '2020-01-01', fecha_vencimiento: '2099-01-01' }],
+                        fecha_fabricacion: hoy, fecha_vencimiento: '2099-01-01' }],
                 });
                 const catalogo = await ventas.cargar(proxy, usuario);
                 const pres = catalogo.presentaciones.filter(p => p.id_medicamento === med.insertId);

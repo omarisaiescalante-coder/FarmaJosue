@@ -78,12 +78,41 @@ function actualizarTotales() {
         const centavos = Math.round(precio * 100) * cantidad;
         const subtotal = Number.isSafeInteger(centavos) && centavos >= 0 ? centavos : 0;
         lote.querySelector('[data-total-lote]').textContent = `Precio de compra total = L. ${(subtotal / 100).toFixed(2)}`;
-        const contenido = nombre => Number(lote.querySelector(`[data-campo="${nombre}"]`).value || 0);
-        const columnasStock = { Caja: ['Caja', 'cajas_por_paquete'], Blister: ['Blíster', 'blisteres_por_paquete'], Unidad: ['Unidad', 'unidades_por_paquete'] };
-        const seleccionadas = new Set([...lote.querySelectorAll('[data-forma-venta] select')].map(select => select.value));
-        const resumenStock = Object.entries(columnasStock).filter(([nombre]) => seleccionadas.has(nombre))
-            .map(([, [etiqueta, campo]]) => `${etiqueta} = ${cantidad * contenido(campo) || 0}`);
-        lote.querySelector('[data-unidades-lote]').textContent = 'Stock = ' + (resumenStock.join(', ') || '0');
+        const stock = lote.querySelector('[data-unidades-lote]');
+        const lista = stock.querySelector('ul');
+        const aviso = stock.querySelector('p');
+        lista.replaceChildren();
+        const formatos = [];
+        let estado = 'Ingresá los paquetes y su contenido para calcular el stock.';
+        if (Number.isSafeInteger(cantidad) && cantidad > 0) {
+            try {
+                const datos = datosLote(lote);
+                const presentaciones = new Set(datos.formas_venta.map(fila => fila.nombre));
+                const { cajasPorPaquete, blisteresPorPaquete, unidadesPorPaquete } = window.equivalenciasLote(datos);
+                const unidades = cantidad * unidadesPorPaquete;
+                if (unidades > 2147483647) {
+                    estado = 'La cantidad excede el inventario permitido.';
+                } else {
+                    if (presentaciones.has('Caja')) formatos.push(['Cajas', cantidad * cajasPorPaquete]);
+                    if (presentaciones.has('Blister') && blisteresPorPaquete !== null) formatos.push(['Blísteres', cantidad * blisteresPorPaquete]);
+                    if (presentaciones.has('Unidad')) formatos.push(['Unidades', unidades]);
+                }
+            } catch {
+                estado = 'Completá las cantidades por presentación para calcular el stock total.';
+            }
+        }
+        for (const [etiqueta, cantidadTotal] of formatos) {
+            const item = document.createElement('li');
+            const valor = document.createElement('strong');
+            valor.textContent = cantidadTotal.toLocaleString('es-HN');
+            const nombre = document.createElement('span');
+            nombre.textContent = etiqueta;
+            item.append(valor, nombre);
+            lista.append(item);
+        }
+        lista.hidden = formatos.length === 0;
+        aviso.hidden = !lista.hidden;
+        aviso.textContent = lista.hidden ? estado : '';
         total += subtotal;
     }
     form.elements.total.value = (total / 100).toFixed(2);
@@ -100,6 +129,7 @@ function agregarLote() {
     leyenda.textContent = 'LOTE Y PRECIO COMPRA';
     lote.append(leyenda);
     const numero = ++siguienteLote;
+    const fechasPermitidas = window.limitesFechasLote();
     for (const [campo, titulo, tipo] of [
         ['nombre_medicamento', 'Nombre del medicamento', 'text'], ['numero_lote', 'Número de lote', 'text'],
         ['id_medicamento', '', 'hidden'], ['laboratorio', '', 'hidden'],
@@ -130,6 +160,11 @@ function agregarLote() {
                 const etiquetas = { Blister: 'Blíster' };
                 for (const opcion of opciones) input.add(new Option(etiquetas[opcion] || opcion, opcion));
         } else input.type = tipo;
+        if (campo === 'fecha_fabricacion') {
+            input.min = fechasPermitidas.fabricacionMin;
+            input.max = fechasPermitidas.hoy;
+        }
+        if (campo === 'fecha_vencimiento') input.min = fechasPermitidas.vencimientoMin;
         if (tipo === 'hidden') grupo.hidden = true;
         if (campo === 'numero_lote') { input.maxLength = 50; input.placeholder = 'Escribí el lote o dejá vacío para generarlo'; }
         if (campo === 'nombre_medicamento') { input.maxLength = 150; input.autocomplete = 'off'; }
@@ -167,7 +202,10 @@ function agregarLote() {
     for (const nombre of ['numero_lote', 'cantidad', 'precio']) campo(nombre).parentElement.className = 'col-12 col-md-4';
     const stock = document.createElement('p'); stock.hidden = true;
     const total = document.createElement('p'); total.className = 'col-12 lote-total-compra'; total.dataset.totalLote = '';
-    const unidadesTotal = document.createElement('p'); unidadesTotal.className = 'col-12 text-secondary'; unidadesTotal.dataset.unidadesLote = '';
+    const unidadesTotal = document.createElement('div');
+    unidadesTotal.dataset.unidadesLote = '';
+    unidadesTotal.setAttribute('aria-live', 'polite');
+    unidadesTotal.innerHTML = '<h3>Stock total recibido</h3><ul></ul><p></p>';
     lote.append(stock, total, unidadesTotal);
     campo('tipo_medicamento').previousElementSibling.textContent = 'Cómo entra';
     campo('tipo_medicamento').options[1].textContent = 'Blíster (pastillas)';
@@ -193,7 +231,12 @@ function agregarLote() {
         agregarForma.disabled = filas.children.length >= 3;
         for (const fila of filas.children) {
             const nombre = fila.querySelector('select').value;
-            const texto = nombre === 'Caja' ? 'Cantidad de cajas' : nombre === 'Blister' ? 'Cantidad de blísteres' : nombre === 'Unidad' ? 'Cantidad de unidades' : 'Cantidad';
+            const etiquetas = {
+                Caja: 'Cantidad de cajas por paquete',
+                Blister: 'Cantidad de blíster por caja',
+                Unidad: pastilla ? 'Cantidad de unidades por blíster' : 'Cantidad de unidad por caja/paquete',
+            };
+            const texto = etiquetas[nombre] ?? 'Cantidad';
             fila.querySelector('[data-titulo-cantidad]').textContent = texto;
             fila.querySelector('[data-equivalencia]').title = texto;
         }
@@ -325,17 +368,6 @@ function actualizarLaboratorios() {
 function agregarRegistroMedicamento(lote, selector, buscador) {
     const seccion = document.createElement('div');
     seccion.style.display = 'contents';
-    const abrir = document.createElement('button');
-    abrir.type = 'button'; abrir.className = 'btn btn-warning';
-    abrir.textContent = 'Nuevo';
-    const pregunta = document.createElement('p');
-    pregunta.textContent = '¿Quieres registrar medicamento?';
-    pregunta.hidden = true;
-    const cancelarAviso = document.createElement('button');
-    cancelarAviso.type = 'button';
-    cancelarAviso.className = 'btn btn-secondary ms-2';
-    cancelarAviso.textContent = 'Cancelar';
-    cancelarAviso.hidden = true;
     const modal = document.createElement('dialog');
     modal.className = 'registro-medicamento';
     const titulo = document.createElement('h2');
@@ -347,16 +379,20 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
     panel.className = 'row g-3 border rounded p-3 mt-2';
     panel.hidden = panel.disabled = true;
     const campos = {};
-    for (const [nombre, titulo] of [['nombre', 'Nombre *'], ['laboratorio', 'Laboratorio *'], ['categoria', 'Categoría'], ['restriccion', 'Restricción *']]) {
+    for (const [nombre, titulo] of [['nombre', 'Nombre *'], ['codigo', 'Código'], ['laboratorio', 'Laboratorio *'], ['categoria', 'Categoría'], ['restriccion', 'Restricción *']]) {
         const grupo = document.createElement('div'); grupo.className = 'col-12 col-md-6';
         const label = document.createElement('label'); label.textContent = titulo; label.className = 'form-label';
         const input = document.createElement(nombre === 'restriccion' ? 'select' : 'input');
         input.id = `${selector.id}-nuevo-${nombre}`; label.htmlFor = input.id;
-        input.className = 'form-control'; input.required = nombre !== 'categoria';
+        input.className = 'form-control'; input.required = nombre !== 'categoria' && nombre !== 'codigo';
         if (nombre === 'restriccion') {
             input.add(new Option('Seleccioná...', ''));
             for (const valor of ['Sin Receta Medica', 'Con Receta Medica']) input.add(new Option(valor, valor));
         } else { input.type = 'text'; input.maxLength = nombre === 'categoria' ? 100 : 150; }
+        if (nombre === 'codigo') {
+            input.maxLength = 20;
+            input.placeholder = 'Automático si se deja vacío';
+        }
         if (nombre === 'laboratorio') {
             input.type = 'hidden'; grupo.hidden = true; input.required = false;
             input.dataset.laboratorioMedicamento = '';
@@ -372,23 +408,21 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
     const cerrar = () => {
         modal.close();
         panel.hidden = panel.disabled = true;
-        pregunta.hidden = cancelarAviso.hidden = true;
     };
     modal.addEventListener('cancel', evento => {
         evento.preventDefault();
         if (!guardarNuevo.disabled) cerrar();
     });
-    const mostrar = (enfocar = true) => {
+    const mostrar = () => {
+        cerrarSugerencias();
         campos.nombre.value = buscador.value.trim();
+        campos.codigo.value = '';
         panel.hidden = panel.disabled = false;
-        pregunta.hidden = cancelarAviso.hidden = true;
         estado.textContent = '';
         if (!modal.open) modal.showModal();
-        if (enfocar) campos.nombre.focus();
+        campos.nombre.focus();
     };
-    abrir.addEventListener('click', () => mostrar());
     cancelar.addEventListener('click', cerrar);
-    cancelarAviso.addEventListener('click', () => { cerrar(); buscador.focus(); });
     const lista = document.createElement('div');
     lista.id = `${selector.id}-opciones`;
     lista.className = 'medicamentos-sugerencias';
@@ -416,9 +450,10 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
         opcionActiva = -1;
         buscador.removeAttribute('aria-activedescendant');
         const texto = buscador.value.trim().toLocaleLowerCase('es');
-        const coincidencias = texto ? catalogoMedicamentos.filter(m =>
-            `${m.nombre} ${m.codigo}`.toLocaleLowerCase('es').includes(texto)).slice(0, 30) : [];
-        if (!coincidencias.length) { cerrarSugerencias(); return; }
+        if (!texto) { cerrarSugerencias(); return; }
+        const coincidencias = catalogoMedicamentos.filter(m =>
+            `${m.nombre} ${m.codigo}`.toLocaleLowerCase('es').includes(texto)).slice(0, 30);
+        if (!coincidencias.length) coincidencias.push(null);
         for (const [indice, medicamento] of coincidencias.entries()) {
             const opcion = document.createElement('button');
             opcion.type = 'button';
@@ -426,13 +461,19 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
             opcion.setAttribute('role', 'option');
             opcion.setAttribute('aria-selected', 'false');
             opcion.tabIndex = -1;
-            const nombre = document.createElement('span');
-            nombre.textContent = medicamento.nombre;
-            const codigo = document.createElement('small');
-            codigo.textContent = medicamento.codigo;
-            opcion.append(nombre, codigo);
+            if (medicamento) {
+                const nombre = document.createElement('span');
+                nombre.textContent = medicamento.nombre;
+                const codigo = document.createElement('small');
+                codigo.textContent = medicamento.codigo;
+                opcion.append(nombre, codigo);
+                opcion.addEventListener('click', () => elegir(medicamento));
+            } else {
+                opcion.className = 'medicamento-crear';
+                opcion.textContent = '+ Crear nuevo medicamento';
+                opcion.addEventListener('click', mostrar);
+            }
             opcion.addEventListener('mousedown', evento => evento.preventDefault());
-            opcion.addEventListener('click', () => elegir(medicamento));
             lista.append(opcion);
         }
         const posicion = buscador.getBoundingClientRect();
@@ -453,18 +494,16 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
         }
     });
     seccion.append(lista);
-    const buscar = (confirmar = false) => {
+    const buscar = () => {
         const nombre = buscador.value.trim();
         const medicamento = catalogoMedicamentos.find(m => m.nombre.toLocaleLowerCase('es') === nombre.toLocaleLowerCase('es'));
         const id = medicamento ? String(medicamento.id_medicamento) : '';
         if (selector.value !== id) { selector.value = id; selector.dispatchEvent(new Event('change')); }
         buscador.setCustomValidity(nombre && !medicamento ? 'Registrá este medicamento para continuar.' : '');
-        pregunta.textContent = 'Agregue medicamento → Nuevo';
-        pregunta.hidden = !nombre || !!medicamento || catalogoMedicamentos.some(m => m.nombre.toLocaleLowerCase('es').includes(nombre.toLocaleLowerCase('es')));
     };
     buscador.addEventListener('input', () => { buscar(); sugerir(); });
     buscador.addEventListener('focus', sugerir);
-    buscador.addEventListener('change', () => { cerrarSugerencias(); buscar(true); });
+    buscador.addEventListener('change', () => { cerrarSugerencias(); buscar(); });
     buscador.addEventListener('blur', cerrarSugerencias);
     buscador.addEventListener('keydown', evento => {
         if (['ArrowDown', 'ArrowUp'].includes(evento.key)) {
@@ -484,7 +523,7 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
             lista.querySelectorAll('button')[opcionActiva].click();
             return;
         }
-        if (evento.key === 'Enter') { evento.preventDefault(); buscar(true); }
+        if (evento.key === 'Enter') { evento.preventDefault(); buscar(); }
     });
     guardarNuevo.addEventListener('click', async () => {
         actualizarLaboratorios();
@@ -513,13 +552,10 @@ function agregarRegistroMedicamento(lote, selector, buscador) {
     accionesMedicamento.append(guardarNuevo, cancelar);
     panel.append(accionesMedicamento, estado);
     modal.append(titulo, panel);
-    buscador.parentElement.classList.add('lote-buscador');
-    buscador.parentElement.append(pregunta, abrir);
     modal.addEventListener('keydown', evento => {
         if (evento.key === 'Enter' && evento.target.tagName !== 'BUTTON') {
             evento.preventDefault();
-            if (panel.hidden) abrir.click();
-            else guardarNuevo.click();
+            guardarNuevo.click();
         }
     });
     seccion.append(modal); lote.append(seccion);
@@ -596,7 +632,10 @@ function crearFormulario(config, proveedores) {
             input.add(new Option('Seleccioná un laboratorio o proveedor', ''));
             for (const proveedor of proveedores) input.add(new Option(proveedor.nombre, proveedor.nombre));
         } else if (campo.type === 'select') {
-            for (const opcion of campo.options) input.add(new Option(opcion, opcion));
+            for (const opcion of campo.options) {
+                const texto = campo.name === 'estado' && opcion === 'A Credito' ? 'A crédito' : opcion;
+                input.add(new Option(texto, opcion));
+            }
         } else {
             input.type = campo.type === 'distributor-name' ? 'text' : campo.type || 'text';
             input.readOnly = Boolean(campo.readOnly);
@@ -645,10 +684,7 @@ async function verLotes(compra) {
 }
 document.getElementById('verLotesRegistrados')?.addEventListener('click', () => {
     const paginaLotes = document.getElementById('vistaInventarioLotes');
-    if (paginaLotes && !paginaLotes.hidden) {
-        window.inventarioCompras.mostrarRegistro();
-        return;
-    }
+    if (paginaLotes && !paginaLotes.hidden) return;
     window.inventarioLotes.abrir(comprasRegistradas, 'Inventario de Lotes', { isModalMode: false });
 });
 async function cargar() {
@@ -773,6 +809,7 @@ async function iniciar() {
         usuario = respuesta.usuario;
         if (!usuario || !['Administrador', 'Dispensador'].includes(usuario.rol)) { window.location.replace('index.html'); return; }
         document.getElementById('sessionUser').textContent = `${usuario.nombre} ${usuario.apellido}`;
+        document.getElementById('sessionRole').textContent = usuario.rol;
         await cargar();
         guardar.disabled = limpiar.disabled = false;
     } catch (error) { mensaje(error.message, true); }
