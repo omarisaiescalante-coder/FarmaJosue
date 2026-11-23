@@ -125,3 +125,15 @@
     font-size: .8rem;
 }
 .med-card .med-editar:hover { background: #eef4fd; color: #1c4487; }
+
+/* Receta, lote y semáforo */
+.med-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 4px; }
+.med-sub .med-cat { margin: 0; }
+.med-receta { padding: 2px 8px; border-radius: 6px; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.receta-con { background: #e8eefc; color: #2349a8; }
+.receta-sin { background: #eef2f7; color: #4a5d7a; }
+.med-existencias { display: inline-flex; align-items: center; gap: 7px; }
+.semaforo { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.semaforo-verde { background: #22a559; }
+.semaforo-amarillo { background: #f2b705; }
+.semaforo-rojo { background: #d93025; }

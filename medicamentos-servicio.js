@@ -9,7 +9,7 @@ async function listar(db, sesion) {
     const [meds] = await db.query(`SELECT id_medicamento, nombre, categoria, restriccion, stock_total, estado
         FROM medicamentos ORDER BY nombre`);
     const [pres] = await db.query('SELECT * FROM medicamento_presentaciones ORDER BY id_presentacion');
-    const [lotes] = await db.query(`SELECT id_lote, id_medicamento, numero_lote, tipo_medicamento, contenido_caja, paquetes_por_caja, unidades_por_blister,
+    const [lotes] = await db.query(`SELECT id_lote, id_medicamento, numero_lote, tipo_medicamento, modalidad_venta, contenido_caja, paquetes_por_caja, unidades_por_blister,
         DATE_FORMAT(fecha_vencimiento, '%Y-%m-%d') AS fecha_vencimiento, cantidad_disponible
         FROM lote ORDER BY fecha_vencimiento, id_lote`);
 
@@ -29,7 +29,7 @@ async function listar(db, sesion) {
         lotesPorMed.get(l.id_medicamento).push({
             id_lote: l.id_lote,
             numero_lote: String(l.numero_lote),
-            tipo_medicamento: l.tipo_medicamento, contenido_caja: l.contenido_caja,
+            tipo_medicamento: l.tipo_medicamento, modalidad: String(l.modalidad_venta || ''), contenido_caja: l.contenido_caja,
             paquetes_por_caja: l.paquetes_por_caja, unidades_por_blister: l.unidades_por_blister,
             fecha_vencimiento: l.fecha_vencimiento,
             cantidad: Number(l.cantidad_disponible) || 0
@@ -70,4 +70,29 @@ async function actualizar(db, sesion, datos) {
         throw error;
     }
 }
-module.exports = { listar, lotes, actualizar };
+
+// Lotes con existencias que vencen en el periodo, más los ya vencidos hasta la fecha final.
+async function reporteVencimientos(db, sesion, datos) {
+    await autorizar(db, sesion, 'medicamentos');
+    const desde = String(datos?.desde || ''), hasta = String(datos?.hasta || '');
+    const valida = f => /^\d{4}-\d{2}-\d{2}$/.test(f) && !Number.isNaN(Date.parse(f));
+    if (!valida(desde) || !valida(hasta)) throw new Error('Elige una fecha de inicio y una fecha final válidas.');
+    if (desde > hasta) throw new Error('La fecha de inicio no puede ser mayor que la fecha final.');
+    const [filas] = await db.execute(`SELECT m.codigo, m.nombre AS medicamento, l.numero_lote AS lote,
+        l.cantidad_disponible AS cantidad, DATE_FORMAT(l.fecha_vencimiento, '%Y-%m-%d') AS vencimiento,
+        IF(l.fecha_vencimiento < CURDATE(), 'Vencido', 'Por vencer') AS situacion
+        FROM lote l JOIN medicamentos m ON m.id_medicamento = l.id_medicamento
+        WHERE l.cantidad_disponible > 0 AND l.estado <> 'Retirado'
+          AND ((l.fecha_vencimiento < CURDATE() AND l.fecha_vencimiento <= ?)
+               OR l.fecha_vencimiento BETWEEN ? AND ?)
+        ORDER BY l.fecha_vencimiento, m.nombre`, [hasta, desde, hasta]);
+    return {
+        desde, hasta,
+        filas: filas.map(f => ({
+            codigo: String(f.codigo), medicamento: String(f.medicamento), lote: String(f.lote),
+            cantidad: Number(f.cantidad) || 0, vencimiento: f.vencimiento, situacion: f.situacion
+        }))
+    };
+}
+
+module.exports = { listar, lotes, actualizar, reporteVencimientos };

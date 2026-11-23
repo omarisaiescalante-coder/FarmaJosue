@@ -55,3 +55,12 @@ contextBridge.exposeInMainWorld('farmacia', {
     reporteVentas: (rango) => ipcRenderer.invoke('ventas:reporte', rango),
     guardarReporteVentasPDF: datos => ipcRenderer.invoke('ventas:guardarReportePDF', datos),
 });
+
+// ===== Reporte de vencimientos de medicamentos =====
+{
+    const { contextBridge: puente, ipcRenderer: ipc } = require('electron');
+    puente.exposeInMainWorld('reportesMedicamentos', {
+        reporteVencimientos: (datos) => ipc.invoke('medicamentos:reporteVencimientos', datos),
+        reportePdf: () => ipc.invoke('medicamentos:reportePdf'),
+    });
+}

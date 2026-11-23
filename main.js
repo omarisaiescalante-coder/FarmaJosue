@@ -268,3 +268,44 @@ app.on('window-all-closed', () => {
         app.quit();
 
 });
+
+// ===== Reporte de vencimientos de medicamentos (con PDF) =====
+{
+    const { ipcMain: ipc, dialog: dlg, BrowserWindow: Ventana, app: aplicacion } = require('electron');
+    const ruta = require('node:path');
+    const { writeFile } = require('node:fs/promises');
+    const base = require('./database');
+    const servicio = require('./medicamentos-servicio');
+
+    // Consulta los lotes vencidos y próximos a vencer entre dos fechas.
+    ipc.removeHandler('medicamentos:reporteVencimientos');
+    ipc.handle('medicamentos:reporteVencimientos', async (_evento, datos) => {
+        try {
+            return { datos: await servicio.reporteVencimientos(base, usuarioActivo, datos) };
+        } catch (error) {
+            return { error: error.message };
+        }
+    });
+
+    // Guarda en PDF la pantalla del reporte (lo que se ve al imprimir).
+    ipc.removeHandler('medicamentos:reportePdf');
+    ipc.handle('medicamentos:reportePdf', async (evento) => {
+        try {
+            if (!usuarioActivo) throw new Error('Inicia sesión para continuar.');
+            const ventana = Ventana.fromWebContents(evento.sender);
+            const nombre = `reporte-vencimientos-${new Date().toISOString().slice(0, 10)}.pdf`;
+            const { canceled, filePath } = await dlg.showSaveDialog(ventana, {
+                title: 'Guardar reporte en PDF',
+                defaultPath: ruta.join(aplicacion.getPath('documents'), nombre),
+                filters: [{ name: 'PDF', extensions: ['pdf'] }],
+            });
+            if (canceled || !filePath) return { datos: { cancelado: true } };
+            const pdf = await evento.sender.printToPDF({ printBackground: true, pageSize: 'A4' });
+            await writeFile(filePath, pdf);
+            return { datos: { ruta: filePath } };
+        } catch (error) {
+            console.error('medicamentos:reportePdf', error.message);
+            return { error: 'No se pudo generar el PDF.' };
+        }
+    });
+}
