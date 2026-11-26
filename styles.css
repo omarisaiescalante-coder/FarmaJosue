@@ -1150,11 +1150,12 @@ body[data-module="ventas"] [data-cantidad-venta][aria-invalid="true"] { border-c
 .venta-dialogo-icono svg { width: 1.45rem; height: 1.45rem; }
 .venta-icono-exito, #dialogoVenta[data-estado="exitosa"] .venta-icono-resumen { display: none; }
 #dialogoVenta[data-estado="exitosa"] .venta-icono-exito { display: block; }
-#dialogoVenta[data-estado="exitosa"] .venta-dialogo-cabecera {
-    background: linear-gradient(115deg, #e6f7ef, #f5fcf8);
-    border-bottom-color: #d7eddf;
+#dialogoVenta[data-estado="exitosa"] #imprimirRecibo {
+    background: #16704f;
+    color: #fff;
+    border: 1px solid #16704f;
 }
-#dialogoVenta[data-estado="exitosa"] .venta-dialogo-icono { color: #146247; background: #d0efdd; }
+#dialogoVenta[data-estado="exitosa"] #imprimirRecibo:hover { background: #10583e; }
 .venta-dialogo-etiqueta { color: #475e78; font-size: .69rem; font-weight: 700; letter-spacing: .12em; }
 #tituloDialogoVenta { margin: .14rem 0; font-size: 1.5rem; line-height: 1.2; }
 .venta-dialogo-cabecera p { margin: .3rem 0 0; color: #4e6178; font-size: .87rem; }
